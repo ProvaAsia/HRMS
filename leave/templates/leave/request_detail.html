@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Leave Request #{{ req.pk }}{% endblock %}
-{% block page_title %}Leave Request Detail{% endblock %}
+{% block title %}คำขอลา #{{ req.pk }}{% endblock %}
+{% block page_title %}รายละเอียดคำขอลา{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl space-y-4">
@@ -17,70 +17,96 @@
     </div>
     <dl class="grid grid-cols-2 gap-4 text-sm">
       <div>
-        <dt class="text-gray-500">Start Date</dt>
+        <dt class="text-gray-500">วันเริ่มต้น</dt>
         <dd class="font-medium mt-0.5">{{ req.start_date|date:"d M Y" }}</dd>
       </div>
       <div>
-        <dt class="text-gray-500">End Date</dt>
+        <dt class="text-gray-500">วันสิ้นสุด</dt>
         <dd class="font-medium mt-0.5">{{ req.end_date|date:"d M Y" }}</dd>
       </div>
       <div>
-        <dt class="text-gray-500">Days Requested</dt>
-        <dd class="font-medium mt-0.5">{{ req.days }} days</dd>
+        <dt class="text-gray-500">จำนวนวัน</dt>
+        <dd class="font-medium mt-0.5">{{ req.days }} วัน</dd>
       </div>
       <div>
-        <dt class="text-gray-500">Submitted</dt>
+        <dt class="text-gray-500">วันที่ส่งคำขอ</dt>
         <dd class="font-medium mt-0.5">{{ req.created_at|date:"d M Y H:i" }}</dd>
       </div>
       <div class="col-span-2">
-        <dt class="text-gray-500">Reason</dt>
+        <dt class="text-gray-500">เหตุผล</dt>
         <dd class="mt-0.5 text-gray-800">{{ req.reason|default:"—" }}</dd>
       </div>
-      {% if req.reviewed_by %}
+      {% if req.approved_by %}
       <div>
-        <dt class="text-gray-500">Reviewed By</dt>
+        <dt class="text-gray-500">อนุมัติโดย</dt>
+        <dd class="font-medium mt-0.5">{{ req.approved_by.get_full_name }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">วันที่อนุมัติ</dt>
+        <dd class="font-medium mt-0.5">{{ req.approved_at|date:"d M Y H:i" }}</dd>
+      </div>
+      {% elif req.reviewed_by %}
+      <div>
+        <dt class="text-gray-500">พิจารณาโดย</dt>
         <dd class="font-medium mt-0.5">{{ req.reviewed_by.get_full_name }}</dd>
       </div>
-      <div>
-        <dt class="text-gray-500">Reviewed At</dt>
-        <dd class="font-medium mt-0.5">{{ req.reviewed_at|date:"d M Y H:i" }}</dd>
-      </div>
-      {% if req.review_comment %}
-      <div class="col-span-2">
-        <dt class="text-gray-500">Review Comment</dt>
-        <dd class="mt-0.5 text-gray-800">{{ req.review_comment }}</dd>
-      </div>
       {% endif %}
+      {% if req.rejection_reason %}
+      <div class="col-span-2">
+        <dt class="text-gray-500">เหตุผลที่ไม่อนุมัติ</dt>
+        <dd class="mt-0.5 text-red-700">{{ req.rejection_reason }}</dd>
+      </div>
       {% endif %}
     </dl>
   </div>
 
-  <!-- Review Form (HR/Admin only, pending) -->
+  <!-- Leave Balance ของพนักงาน -->
+  {% if balance %}
+  <div class="card p-4 bg-blue-50 border border-blue-100">
+    <p class="text-sm font-medium text-blue-800 mb-2">วันลา {{ req.leave_type.name }} ปี {{ balance.year }}</p>
+    <div class="flex gap-6 text-sm">
+      <div>
+        <span class="text-gray-500">สิทธิ์ทั้งหมด</span>
+        <span class="ml-2 font-bold text-gray-900">{{ balance.entitled_days }} วัน</span>
+      </div>
+      <div>
+        <span class="text-gray-500">ใช้ไปแล้ว</span>
+        <span class="ml-2 font-bold text-orange-600">{{ balance.used_days }} วัน</span>
+      </div>
+      <div>
+        <span class="text-gray-500">คงเหลือ</span>
+        <span class="ml-2 font-bold text-green-700">{{ balance.remaining_days }} วัน</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Review Form (manager / HR / admin, pending) -->
   {% if can_review %}
   <div class="card p-6">
-    <h3 class="font-semibold text-gray-900 mb-4">Review Request</h3>
+    <h3 class="font-semibold text-gray-900 mb-4">พิจารณาคำขอ</h3>
     <form method="post" class="space-y-4">
       {% csrf_token %}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Decision</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">การตัดสินใจ</label>
         {{ review_form.status }}
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Comment (optional)</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">ความคิดเห็น (ถ้ามี)</label>
         {{ review_form.review_comment }}
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="btn-primary">Submit Review</button>
-        <a href="{% url 'leave_list' %}" class="btn-secondary">Back</a>
+        <button type="submit" class="btn-primary">ยืนยัน</button>
+        <a href="{% url 'leave_list' %}" class="btn-secondary">ย้อนกลับ</a>
       </div>
     </form>
   </div>
   {% else %}
   <div class="flex gap-3">
-    <a href="{% url 'leave_list' %}" class="btn-secondary">← Back to List</a>
+    <a href="{% url 'leave_list' %}" class="btn-secondary">← ย้อนกลับ</a>
     {% if req.status == 'pending' and req.employee == user %}
     <a href="{% url 'leave_cancel' req.pk %}" class="btn-danger"
-       onclick="return confirm('Cancel this request?')">Cancel Request</a>
+       onclick="return confirm('ยืนยันยกเลิกคำขอ?')">ยกเลิกคำขอ</a>
     {% endif %}
   </div>
   {% endif %}

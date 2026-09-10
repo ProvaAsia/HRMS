@@ -4,29 +4,45 @@
 {% block top_actions %}
   <a href="{% url 'ot_create' %}" class="btn-primary">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-    Request OT
+    ขอโอที
   </a>
-  {% if user.is_hr_or_admin %}
+  {% if user.can_approve %}
   <a href="{% url 'ot_list' %}?status=pending" class="btn-secondary">
-    Pending
+    รออนุมัติ
     {% if pending_count %}<span class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5">{{ pending_count }}</span>{% endif %}
   </a>
   {% endif %}
 {% endblock %}
 
 {% block content %}
+<!-- Monthly OT Summary -->
+<div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="card p-5">
+    <p class="text-xs text-gray-500 mb-1">ชั่วโมงโอที — {{ current_month }}</p>
+    <p class="text-3xl font-bold text-gray-900">{{ monthly_hours|floatformat:1 }} <span class="text-lg font-normal text-gray-500">ชม.</span></p>
+    <p class="text-xs text-gray-400 mt-1">เฉพาะที่ได้รับการอนุมัติ</p>
+  </div>
+  {% if user.can_approve and pending_count %}
+  <div class="card p-5 border-l-4 border-yellow-400">
+    <p class="text-xs text-gray-500 mb-1">รอการอนุมัติ</p>
+    <p class="text-3xl font-bold text-yellow-600">{{ pending_count }}</p>
+    <a href="{% url 'ot_list' %}?status=pending" class="text-xs text-blue-600 hover:underline mt-1 block">ดูคำขอที่รออนุมัติ →</a>
+  </div>
+  {% endif %}
+</div>
+
 <div class="card overflow-hidden">
   <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-    <h2 class="font-semibold text-gray-900">My OT Requests</h2>
-    <a href="{% url 'ot_list' %}" class="text-sm text-blue-600 hover:underline">View all</a>
+    <h2 class="font-semibold text-gray-900">คำขอโอทีล่าสุด</h2>
+    <a href="{% url 'ot_list' %}" class="text-sm text-blue-600 hover:underline">ดูทั้งหมด</a>
   </div>
   <table class="w-full">
     <thead class="bg-gray-50">
       <tr>
-        <th class="table-header">Date</th>
-        <th class="table-header">Time</th>
-        <th class="table-header">Hours</th>
-        <th class="table-header">Status</th>
+        <th class="table-header">วันที่</th>
+        <th class="table-header">เวลา</th>
+        <th class="table-header">ชั่วโมง</th>
+        <th class="table-header">สถานะ</th>
         <th class="table-header"></th>
       </tr>
     </thead>
@@ -35,16 +51,16 @@
       <tr class="hover:bg-gray-50">
         <td class="table-cell font-medium">{{ r.date|date:"d M Y" }}</td>
         <td class="table-cell text-gray-500 text-xs">{{ r.start_time|time:"H:i" }} — {{ r.end_time|time:"H:i" }}</td>
-        <td class="table-cell font-medium">{{ r.hours }}h</td>
+        <td class="table-cell font-medium">{{ r.hours }} ชม.</td>
         <td class="table-cell">
           <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
             {{ r.get_status_display }}
           </span>
         </td>
-        <td class="table-cell"><a href="{% url 'ot_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">View</a></td>
+        <td class="table-cell"><a href="{% url 'ot_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No OT requests yet.</td></tr>
+      <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">ยังไม่มีคำขอโอที</td></tr>
       {% endfor %}
     </tbody>
   </table>

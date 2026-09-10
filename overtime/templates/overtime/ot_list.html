@@ -1,14 +1,20 @@
 {% extends 'base.html' %}
 {% block title %}OT Requests{% endblock %}
-{% block page_title %}OT Requests{% endblock %}
+{% block page_title %}คำขอโอที{% endblock %}
 {% block top_actions %}
   <a href="{% url 'ot_create' %}" class="btn-primary">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-    Request OT
+    ขอโอที
   </a>
 {% endblock %}
 
 {% block content %}
+<!-- Monthly Summary Bar -->
+<div class="mb-4 flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-5 py-3 text-sm">
+  <span class="text-gray-500">โอทีที่อนุมัติแล้วเดือน {{ current_month }}</span>
+  <span class="font-bold text-gray-900 text-lg">{{ monthly_hours|floatformat:1 }} <span class="text-sm font-normal text-gray-500">ชม.</span></span>
+</div>
+
 <div class="card p-4 mb-4 flex flex-wrap gap-2">
   {% for val, label in status_choices %}
   <a href="?status={{ val }}"
@@ -17,29 +23,29 @@
     {{ label }}
   </a>
   {% endfor %}
-  <a href="?" class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">All</a>
+  <a href="?" class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">ทั้งหมด</a>
 </div>
 
 <div class="card overflow-hidden">
   <table class="w-full">
     <thead class="bg-gray-50">
       <tr>
-        {% if user.is_hr_or_admin %}<th class="table-header">Employee</th>{% endif %}
-        <th class="table-header">Date</th>
-        <th class="table-header">Time</th>
-        <th class="table-header">Hours</th>
-        <th class="table-header">Reason</th>
-        <th class="table-header">Status</th>
+        {% if user.can_approve %}<th class="table-header">พนักงาน</th>{% endif %}
+        <th class="table-header">วันที่</th>
+        <th class="table-header">เวลา</th>
+        <th class="table-header">ชั่วโมง</th>
+        <th class="table-header">เหตุผล</th>
+        <th class="table-header">สถานะ</th>
         <th class="table-header"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
       {% for r in requests %}
       <tr class="hover:bg-gray-50">
-        {% if user.is_hr_or_admin %}<td class="table-cell font-medium">{{ r.employee.get_full_name }}</td>{% endif %}
+        {% if user.can_approve %}<td class="table-cell font-medium">{{ r.employee.get_full_name }}</td>{% endif %}
         <td class="table-cell">{{ r.date|date:"d M Y" }}</td>
         <td class="table-cell text-gray-500 text-xs">{{ r.start_time|time:"H:i" }} — {{ r.end_time|time:"H:i" }}</td>
-        <td class="table-cell font-medium">{{ r.hours }}h</td>
+        <td class="table-cell font-medium">{{ r.hours }} ชม.</td>
         <td class="table-cell text-gray-500 text-xs">{{ r.reason|truncatechars:40 }}</td>
         <td class="table-cell">
           <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
@@ -47,15 +53,15 @@
           </span>
         </td>
         <td class="table-cell text-right">
-          <a href="{% url 'ot_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">View</a>
+          <a href="{% url 'ot_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a>
           {% if r.status == 'pending' and r.employee == user %}
           · <a href="{% url 'ot_cancel' r.pk %}" class="text-red-500 hover:underline text-xs"
-              onclick="return confirm('Cancel?')">Cancel</a>
+              onclick="return confirm('ยืนยันยกเลิก?')">ยกเลิก</a>
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="7" class="table-cell text-center text-gray-400 py-10">No OT requests found.</td></tr>
+      <tr><td colspan="7" class="table-cell text-center text-gray-400 py-10">ไม่พบคำขอโอที</td></tr>
       {% endfor %}
     </tbody>
   </table>
