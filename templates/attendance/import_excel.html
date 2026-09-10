@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Import Attendance{% endblock %}
+{% block page_title %}Import Attendance from Excel{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'attendance_list' %}" class="btn-secondary">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+  <div class="card p-6">
+    <h2 class="font-semibold text-gray-700 mb-4">Upload Excel File</h2>
+    <p class="text-sm text-gray-500 mb-4">
+      The file should have columns in this order:
+    </p>
+    <div class="bg-gray-50 rounded-lg p-3 text-xs font-mono text-gray-600 mb-4">
+      username_or_email | date (YYYY-MM-DD) | clock_in (HH:MM) | clock_out (HH:MM) | status
+    </div>
+    <p class="text-xs text-gray-400 mb-6">
+      Valid status values: present, late, half_day, absent, wfh, leave. Row 1 is treated as a header and skipped.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Excel File (.xlsx)</label>
+        <input type="file" name="excel_file" accept=".xlsx,.xls" class="form-input" required>
+      </div>
+      <button type="submit" class="btn-primary w-full justify-center">Import Records</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

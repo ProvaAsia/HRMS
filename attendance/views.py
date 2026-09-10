@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.db.models import Sum
 from .models import AttendanceRecord
 from .forms import AttendanceForm, AttendanceAdminForm
+from accounts.models import User
 
 
 @login_required
@@ -115,3 +116,94 @@ def attendance_edit(request, pk):
     return render(request, 'attendance/checkin_form.html', {
         'form': form, 'record': record
     })
+
+
+@login_required
+def import_excel(request):
+    """HR/Admin: upload an Excel file to bulk-import attendance records."""
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('attendance_dashboard')
+
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        excel_file = request.FILES['excel_file']
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(excel_file)
+            ws = wb.active
+
+            created = 0
+            errors = []
+
+            # Expected columns: username/email, date (YYYY-MM-DD), clock_in (HH:MM), clock_out (HH:MM), status
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(row):
+                    continue
+                try:
+                    username_or_email, date_val, clock_in_val, clock_out_val, status_val = (
+                        row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else 'present'
+                    )
+
+                    # Resolve employee
+                    try:
+                        employee = User.objects.get(username=username_or_email)
+                    except User.DoesNotExist:
+                        employee = User.objects.get(email=username_or_email)
+
+                    # Parse date
+                    from datetime import datetime, time as dtime
+                    if isinstance(date_val, str):
+                        record_date = datetime.strptime(date_val, '%Y-%m-%d').date()
+                    else:
+                        record_date = date_val  # already a date from Excel
+
+                    # Parse times
+                    def parse_time(val):
+                        if val is None:
+                            return None
+                        if isinstance(val, dtime):
+                            return val
+                        if hasattr(val, 'time'):
+                            return val.time()
+                        s = str(val).strip()
+                        for fmt in ('%H:%M:%S', '%H:%M'):
+                            try:
+                                return datetime.strptime(s, fmt).time()
+                            except ValueError:
+                                pass
+                        return None
+
+                    clock_in = parse_time(clock_in_val)
+                    clock_out = parse_time(clock_out_val)
+                    status = (status_val or 'present').strip().lower()
+                    valid_statuses = {s for s, _ in AttendanceRecord.STATUS_CHOICES}
+                    if status not in valid_statuses:
+                        status = 'present'
+
+                    record, _ = AttendanceRecord.objects.update_or_create(
+                        employee=employee,
+                        date=record_date,
+                        defaults={
+                            'clock_in': clock_in,
+                            'clock_out': clock_out,
+                            'status': status,
+                        }
+                    )
+                    created += 1
+                except User.DoesNotExist:
+                    errors.append(f"Row {row_num}: user '{row[0]}' not found.")
+                except Exception as e:
+                    errors.append(f"Row {row_num}: {e}")
+
+            if errors:
+                for err in errors[:10]:
+                    messages.warning(request, err)
+            messages.success(request, f"Import complete: {created} record(s) saved.")
+        except ImportError:
+            messages.error(request, 'openpyxl is not installed. Add it to requirements.txt.')
+        except Exception as e:
+            messages.error(request, f'Failed to read file: {e}')
+
+        return redirect('attendance_list')
+
+    return render(request, 'attendance/import_excel.html')

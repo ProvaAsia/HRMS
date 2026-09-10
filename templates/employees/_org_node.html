@@ -1,0 +1,38 @@
+{% load i18n %}
+<div class="org-wrapper" style="display:inline-flex;flex-direction:column;align-items:center;gap:0;">
+  <a href="{% url 'employee_detail' node.profile.pk %}" class="org-card" style="text-decoration:none;color:inherit;">
+    {% if node.profile.photo %}
+    <img src="{{ node.profile.photo.url }}" class="w-10 h-10 rounded-full object-cover mx-auto mb-2">
+    {% else %}
+    <div style="width:40px;height:40px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;color:#1d4ed8;font-weight:700;font-size:14px;margin:0 auto 8px;">
+      {{ node.profile.first_name_en.0 }}{{ node.profile.last_name_en.0 }}
+    </div>
+    {% endif %}
+    <p style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;">{{ node.profile.first_name_en }} {{ node.profile.last_name_en }}</p>
+    <p style="font-size:11px;color:#6b7280;margin-top:2px;">{{ node.profile.job_title|default:node.profile.employee_id }}</p>
+    {% if node.profile.department %}<p style="font-size:10px;color:#9ca3af;">{{ node.profile.department.name }}</p>{% endif %}
+  </a>
+
+  {% if node.reports %}
+  <div style="width:1px;height:20px;background:#d1d5db;"></div>
+  <div style="display:flex;gap:24px;position:relative;align-items:flex-start;">
+    <!-- horizontal bar across children -->
+    {% if node.reports|length > 1 %}
+    <div style="
+      position:absolute;
+      top:0;
+      left:calc(50% / {{ node.reports|length }} + 10px);
+      right:calc(50% / {{ node.reports|length }} + 10px);
+      height:1px;
+      background:#d1d5db;
+    "></div>
+    {% endif %}
+    {% for child in node.reports %}
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <div style="width:1px;height:20px;background:#d1d5db;"></div>
+      {% include "employees/_org_node.html" with node=child %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

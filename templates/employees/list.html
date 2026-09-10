@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block page_title %}Employee Directory{% endblock %}
+
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'employee_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Add Employee
+  </a>
+  <a href="{% url 'org_chart' %}" class="btn-secondary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4m10 0h4M7 10V6m10 4V6M5 14h14M5 18h14"/></svg>
+    Org Chart
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Search / Filter -->
+<form method="get" class="card p-4 mb-6 flex flex-wrap gap-3 items-end">
+  <div class="flex-1 min-w-48">
+    <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+    <input name="q" value="{{ q }}" placeholder="Name, ID, title…" class="form-input">
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-gray-500 mb-1">Department</label>
+    <select name="department" class="form-input">
+      <option value="">All departments</option>
+      {% for dept in departments %}
+      <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+    <select name="employment_type" class="form-input">
+      <option value="">All types</option>
+      {% for val, label in employment_types %}
+      <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn-primary">Filter</button>
+  <a href="{% url 'employee_list' %}" class="btn-secondary">Clear</a>
+</form>
+
+<div class="card overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+    <h2 class="font-semibold text-gray-900">{{ profiles.count }} employee{{ profiles.count|pluralize }}</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="table-header">ID</th>
+          <th class="table-header">Name</th>
+          <th class="table-header">Department</th>
+          <th class="table-header">Job Title</th>
+          <th class="table-header">Type</th>
+          <th class="table-header">Join Date</th>
+          <th class="table-header">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for p in profiles %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="table-cell font-mono text-xs">{{ p.employee_id }}</td>
+          <td class="table-cell">
+            <div class="flex items-center gap-3">
+              {% if p.photo %}
+              <img src="{{ p.photo.url }}" class="w-8 h-8 rounded-full object-cover">
+              {% else %}
+              <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
+                {{ p.first_name_en.0 }}{{ p.last_name_en.0 }}
+              </div>
+              {% endif %}
+              <div>
+                <p class="font-medium text-gray-900">{{ p.first_name_en }} {{ p.last_name_en }}</p>
+                {% if p.first_name_th %}<p class="text-xs text-gray-400">{{ p.first_name_th }} {{ p.last_name_th }}</p>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="table-cell">{{ p.department.name|default:"—" }}</td>
+          <td class="table-cell">{{ p.job_title|default:"—" }}</td>
+          <td class="table-cell">
+            <span class="badge bg-blue-50 text-blue-700">{{ p.get_employment_type_display }}</span>
+          </td>
+          <td class="table-cell">{{ p.join_date|default:"—" }}</td>
+          <td class="table-cell">
+            <div class="flex gap-2">
+              <a href="{% url 'employee_detail' p.pk %}" class="text-blue-600 hover:underline text-sm">View</a>
+              {% if user.is_hr_or_admin %}
+              <a href="{% url 'employee_edit' p.pk %}" class="text-gray-500 hover:underline text-sm">Edit</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="table-cell text-center text-gray-400 py-8">No employees found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

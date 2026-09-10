@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'employee_list' %}" class="btn-secondary">← Cancel</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="space-y-6">
+  {% csrf_token %}
+
+  <!-- Personal Identity -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-700 mb-4">Personal Identity</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Employee ID *</label>
+        {{ form.employee_id }}
+        {% if form.employee_id.errors %}<p class="text-red-500 text-xs mt-1">{{ form.employee_id.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">User Account *</label>
+        {{ form.user }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">First Name (EN)</label>
+        {{ form.first_name_en }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name (EN)</label>
+        {{ form.last_name_en }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ (ไทย)</label>
+        {{ form.first_name_th }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">นามสกุล (ไทย)</label>
+        {{ form.last_name_th }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">National ID</label>
+        {{ form.national_id }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+        {{ form.date_of_birth }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+        {{ form.photo }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-700 mb-4">Contact Information</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Company Email</label>
+        {{ form.company_email }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Personal Email</label>
+        {{ form.personal_email }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+        {{ form.phone }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Current Address</label>
+        {{ form.current_address }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Registered Address</label>
+        {{ form.registered_address }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Employment -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-700 mb-4">Employment</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+        {{ form.job_title }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
+        {{ form.employment_type }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Join Date</label>
+        {{ form.join_date }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Probation End Date</label>
+        {{ form.probation_end_date }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Organisation -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-700 mb-4">Organisation</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Division</label>
+        {{ form.division }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+        {{ form.department }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Cost Center</label>
+        {{ form.cost_center }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Work Location</label>
+        {{ form.work_location }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Direct Manager</label>
+        {{ form.direct_manager }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Dotted-line Manager</label>
+        {{ form.dotted_line_manager }}
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'employee_list' %}" class="btn-secondary">Cancel</a>
+    <button type="submit" class="btn-primary">{{ action }} Profile</button>
+  </div>
+</form>
+{% endblock %}

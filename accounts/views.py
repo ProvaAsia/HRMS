@@ -3,10 +3,11 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count
+from django.utils.crypto import get_random_string
 
 from django.utils import timezone
 from .models import User
-from .forms import LoginForm, UserCreateForm, UserEditForm
+from .forms import LoginForm, UserCreateForm, UserEditForm, InviteUserForm, SetPasswordForm
 from recruitment.models import JobPosition, Candidate
 from training.models import TrainingProgram, TrainingEnrollment
 from appraisals.models import AppraisalCycle, Appraisal
@@ -94,3 +95,80 @@ def user_delete(request, pk):
         messages.success(request, 'User deleted.')
         return redirect('user_list')
     return render(request, 'accounts/user_confirm_delete.html', {'object': user})
+
+
+@login_required
+def invite_user(request):
+    """HR/Admin creates an inactive user and gets a setup link to share."""
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    form = InviteUserForm(request.POST or None)
+    setup_link = None
+
+    if request.method == 'POST' and form.is_valid():
+        email = form.cleaned_data['email']
+        role = form.cleaned_data['role']
+        first_name = form.cleaned_data.get('first_name', '')
+        last_name = form.cleaned_data.get('last_name', '')
+
+        # Generate a unique token used as username placeholder
+        token = get_random_string(32)
+        username = email.split('@')[0] + '_' + get_random_string(6)
+
+        user = User.objects.create(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            role=role,
+            is_active=False,
+        )
+        # Store token in password field (hashed); real activation will set real password
+        user.set_unusable_password()
+        # We'll store the token via a dedicated profile field; use last_name as temp storage
+        # Instead, store token in the user's password field temporarily as a marker
+        # Use a simple approach: store token in a way retrievable by the activate view
+        # We save token as part of username for lookup
+        user.username = f'invite_{token}'
+        user.save()
+
+        setup_link = request.build_absolute_uri(
+            f'/accounts/activate/{token}/'
+        )
+        messages.success(
+            request,
+            f'Invitation created for {email}. Copy the setup link below and send it to the user.'
+        )
+
+    return render(request, 'accounts/invite_user.html', {
+        'form': form,
+        'setup_link': setup_link,
+    })
+
+
+def activate_account(request, token):
+    """New user sets their username and password via the invite link."""
+    user = get_object_or_404(User, username=f'invite_{token}', is_active=False)
+
+    form = SetPasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        username = form.cleaned_data['username']
+        password = form.cleaned_data['password1']
+
+        if User.objects.filter(username=username).exclude(pk=user.pk).exists():
+            form.add_error('username', 'This username is already taken.')
+        else:
+            user.username = username
+            user.set_password(password)
+            user.is_active = True
+            user.save()
+            login(request, user)
+            messages.success(request, f'Welcome, {user.get_full_name() or username}! Your account is active.')
+            return redirect('dashboard')
+
+    return render(request, 'accounts/activate_account.html', {
+        'form': form,
+        'invited_email': user.email,
+    })
