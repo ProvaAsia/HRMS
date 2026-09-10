@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Appraisals{% endblock %}
+{% block page_title %}Appraisals & Performance{% endblock %}
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'appraisal_cycle_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Cycle
+  </a>
+  {% endif %}
+  <a href="{% url 'my_appraisals' %}" class="btn-secondary">My Appraisals</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+  {% for cycle in cycles %}
+  <div class="card p-5 flex flex-col gap-3">
+    <div class="flex items-start justify-between">
+      <h3 class="font-semibold text-gray-900">{{ cycle.name }}</h3>
+      <span class="badge flex-shrink-0
+        {% if cycle.status == 'active' %}bg-green-100 text-green-700
+        {% elif cycle.status == 'draft' %}bg-yellow-100 text-yellow-700
+        {% else %}bg-gray-100 text-gray-600{% endif %}">
+        {{ cycle.get_status_display }}
+      </span>
+    </div>
+    {% if cycle.description %}<p class="text-sm text-gray-600 line-clamp-2">{{ cycle.description }}</p>{% endif %}
+    <div class="text-xs text-gray-500 space-y-1">
+      <div>📅 {{ cycle.start_date }} — {{ cycle.end_date }}</div>
+      <div>{{ cycle.appraisal_count }} appraisal{{ cycle.appraisal_count|pluralize }}</div>
+    </div>
+    <a href="{% url 'appraisal_cycle_detail' cycle.pk %}" class="btn-secondary w-full justify-center text-xs py-1.5">View Cycle</a>
+  </div>
+  {% empty %}
+  <div class="col-span-3 text-center py-16 text-gray-400">
+    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"/></svg>
+    <p>No appraisal cycles yet.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

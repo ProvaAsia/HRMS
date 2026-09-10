@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}OT{% endblock %}
+{% block page_title %}Overtime Management{% endblock %}
+{% block top_actions %}
+  <a href="{% url 'ot_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Request OT
+  </a>
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'ot_list' %}?status=pending" class="btn-secondary">
+    Pending
+    {% if pending_count %}<span class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5">{{ pending_count }}</span>{% endif %}
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card overflow-hidden">
+  <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-900">My OT Requests</h2>
+    <a href="{% url 'ot_list' %}" class="text-sm text-blue-600 hover:underline">View all</a>
+  </div>
+  <table class="w-full">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="table-header">Date</th>
+        <th class="table-header">Time</th>
+        <th class="table-header">Hours</th>
+        <th class="table-header">Status</th>
+        <th class="table-header"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for r in my_requests %}
+      <tr class="hover:bg-gray-50">
+        <td class="table-cell font-medium">{{ r.date|date:"d M Y" }}</td>
+        <td class="table-cell text-gray-500 text-xs">{{ r.start_time|time:"H:i" }} — {{ r.end_time|time:"H:i" }}</td>
+        <td class="table-cell font-medium">{{ r.hours }}h</td>
+        <td class="table-cell">
+          <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            {{ r.get_status_display }}
+          </span>
+        </td>
+        <td class="table-cell"><a href="{% url 'ot_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">View</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No OT requests yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

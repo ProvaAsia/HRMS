@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Users{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block top_actions %}
+  {% if user.is_super_admin %}
+  <a href="{% url 'user_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Add User
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card overflow-hidden">
+  <table class="w-full">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="table-header">Name</th>
+        <th class="table-header">Email</th>
+        <th class="table-header">Role</th>
+        <th class="table-header">Department</th>
+        <th class="table-header">Position</th>
+        <th class="table-header">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for u in users %}
+      <tr class="hover:bg-gray-50">
+        <td class="table-cell">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">{{ u.initials }}</div>
+            <span class="font-medium text-gray-900">{{ u.get_full_name|default:u.username }}</span>
+          </div>
+        </td>
+        <td class="table-cell text-gray-500">{{ u.email }}</td>
+        <td class="table-cell">
+          <span class="badge {% if u.role == 'super_admin' %}bg-purple-100 text-purple-700{% elif u.role == 'hr_manager' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ u.get_role_display }}
+          </span>
+        </td>
+        <td class="table-cell">{{ u.department|default:"—" }}</td>
+        <td class="table-cell">{{ u.position|default:"—" }}</td>
+        <td class="table-cell">
+          {% if request.user.is_super_admin %}
+          <div class="flex gap-2">
+            <a href="{% url 'user_edit' u.pk %}" class="text-blue-600 hover:underline text-xs">Edit</a>
+            <a href="{% url 'user_delete' u.pk %}" class="text-red-600 hover:underline text-xs">Delete</a>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="table-cell text-center text-gray-400 py-8">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

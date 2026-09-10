@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Recruitment{% endblock %}
+{% block page_title %}Recruitment & Selection{% endblock %}
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'job_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Position
+  </a>
+  {% endif %}
+  <a href="{% url 'candidate_list' %}" class="btn-secondary">View Candidates</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+  {% for job in jobs %}
+  <div class="card p-5 flex flex-col gap-3">
+    <div class="flex items-start justify-between">
+      <div>
+        <h3 class="font-semibold text-gray-900">{{ job.title }}</h3>
+        <p class="text-sm text-gray-500 mt-0.5">{{ job.department }}</p>
+      </div>
+      <span class="badge flex-shrink-0
+        {% if job.status == 'open' %}bg-green-100 text-green-700
+        {% elif job.status == 'on_hold' %}bg-yellow-100 text-yellow-700
+        {% else %}bg-gray-100 text-gray-600{% endif %}">
+        {{ job.get_status_display }}
+      </span>
+    </div>
+    <p class="text-sm text-gray-600 line-clamp-2">{{ job.description }}</p>
+    <div class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+      <span>{{ job.candidate_count }} candidate{{ job.candidate_count|pluralize }}</span>
+      <span>{{ job.vacancies }} vacancy{{ job.vacancies|pluralize:"ies" }}</span>
+      {% if job.deadline %}<span>Deadline: {{ job.deadline }}</span>{% endif %}
+    </div>
+    <a href="{% url 'job_detail' job.pk %}" class="btn-secondary w-full justify-center text-xs py-1.5">View Details</a>
+  </div>
+  {% empty %}
+  <div class="col-span-3 text-center py-16 text-gray-400">
+    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01"/></svg>
+    <p>No job positions yet.</p>
+    {% if user.is_hr_or_admin %}<a href="{% url 'job_create' %}" class="text-blue-600 text-sm hover:underline mt-2 inline-block">Create first position</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

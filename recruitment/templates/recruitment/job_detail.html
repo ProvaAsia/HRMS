@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block page_title %}{{ job.title }}{% endblock %}
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'job_edit' job.pk %}" class="btn-secondary">Edit</a>
+  <a href="{% url 'candidate_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Add Candidate
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Job Info -->
+  <div class="lg:col-span-1 space-y-4">
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-4">Job Details</h3>
+      <dl class="space-y-3 text-sm">
+        <div><dt class="text-gray-500">Department</dt><dd class="font-medium">{{ job.department }}</dd></div>
+        <div><dt class="text-gray-500">Vacancies</dt><dd class="font-medium">{{ job.vacancies }}</dd></div>
+        <div><dt class="text-gray-500">Status</dt><dd>
+          <span class="badge {% if job.status == 'open' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ job.get_status_display }}</span>
+        </dd></div>
+        {% if job.deadline %}<div><dt class="text-gray-500">Deadline</dt><dd class="font-medium">{{ job.deadline }}</dd></div>{% endif %}
+        <div><dt class="text-gray-500">Posted</dt><dd class="font-medium">{{ job.created_at|date:"d M Y" }}</dd></div>
+      </dl>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-2">Description</h3>
+      <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ job.description }}</p>
+    </div>
+    {% if job.requirements %}
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-2">Requirements</h3>
+      <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ job.requirements }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Candidates -->
+  <div class="lg:col-span-2">
+    <div class="card overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900">Candidates ({{ candidates.count }})</h3>
+      </div>
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="table-header">Name</th>
+            <th class="table-header">Email</th>
+            <th class="table-header">Status</th>
+            <th class="table-header">Applied</th>
+            <th class="table-header"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for c in candidates %}
+          <tr class="hover:bg-gray-50">
+            <td class="table-cell font-medium">{{ c.full_name }}</td>
+            <td class="table-cell text-gray-500">{{ c.email }}</td>
+            <td class="table-cell">
+              <span class="badge {% if c.status == 'hired' %}bg-green-100 text-green-700{% elif c.status == 'rejected' %}bg-red-100 text-red-700{% elif c.status == 'interview' %}bg-blue-100 text-blue-700{% elif c.status == 'offered' %}bg-purple-100 text-purple-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ c.get_status_display }}</span>
+            </td>
+            <td class="table-cell text-gray-500">{{ c.applied_at|date:"d M Y" }}</td>
+            <td class="table-cell"><a href="{% url 'candidate_detail' c.pk %}" class="text-blue-600 hover:underline text-xs">View</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No candidates yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

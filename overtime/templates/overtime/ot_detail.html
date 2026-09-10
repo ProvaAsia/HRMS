@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}OT Request #{{ req.pk }}{% endblock %}
+{% block page_title %}OT Request Detail{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-4">
+  <div class="card p-6">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">OT — {{ req.date|date:"d M Y" }}</h2>
+        <p class="text-sm text-gray-500">{{ req.employee.get_full_name }}</p>
+      </div>
+      <span class="badge {% if req.status == 'approved' %}bg-green-100 text-green-700{% elif req.status == 'rejected' %}bg-red-100 text-red-700{% elif req.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+        {{ req.get_status_display }}
+      </span>
+    </div>
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <dt class="text-gray-500">Start Time</dt>
+        <dd class="font-medium mt-0.5">{{ req.start_time|time:"H:i" }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">End Time</dt>
+        <dd class="font-medium mt-0.5">{{ req.end_time|time:"H:i" }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">OT Hours</dt>
+        <dd class="font-medium mt-0.5">{{ req.hours }} hours</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">Submitted</dt>
+        <dd class="font-medium mt-0.5">{{ req.created_at|date:"d M Y H:i" }}</dd>
+      </div>
+      <div class="col-span-2">
+        <dt class="text-gray-500">Reason</dt>
+        <dd class="mt-0.5 text-gray-800">{{ req.reason }}</dd>
+      </div>
+      {% if req.reviewed_by %}
+      <div>
+        <dt class="text-gray-500">Reviewed By</dt>
+        <dd class="font-medium mt-0.5">{{ req.reviewed_by.get_full_name }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">Reviewed At</dt>
+        <dd class="font-medium mt-0.5">{{ req.reviewed_at|date:"d M Y H:i" }}</dd>
+      </div>
+      {% if req.review_comment %}
+      <div class="col-span-2">
+        <dt class="text-gray-500">Comment</dt>
+        <dd class="mt-0.5 text-gray-800">{{ req.review_comment }}</dd>
+      </div>
+      {% endif %}
+      {% endif %}
+    </dl>
+  </div>
+
+  {% if can_review %}
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-900 mb-4">Review OT Request</h3>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Decision</label>
+        {{ review_form.status }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Comment (optional)</label>
+        {{ review_form.review_comment }}
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="btn-primary">Submit Review</button>
+        <a href="{% url 'ot_list' %}" class="btn-secondary">Back</a>
+      </div>
+    </form>
+  </div>
+  {% else %}
+  <div class="flex gap-3">
+    <a href="{% url 'ot_list' %}" class="btn-secondary">← Back to List</a>
+    {% if req.status == 'pending' and req.employee == user %}
+    <a href="{% url 'ot_cancel' req.pk %}" class="btn-danger"
+       onclick="return confirm('Cancel this OT request?')">Cancel Request</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

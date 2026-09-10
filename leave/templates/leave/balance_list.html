@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Leave Balances{% endblock %}
+{% block page_title %}Leave Balances{% endblock %}
+
+{% block content %}
+<!-- Year filter -->
+<div class="flex items-center gap-3 mb-4">
+  <span class="text-sm text-gray-600">Year:</span>
+  {% for y in "2024,2025,2026,2027"|split:"," %}
+  <a href="?year={{ y }}"
+     class="px-3 py-1 rounded-full text-sm font-medium
+       {% if year|stringformat:'s' == y %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+    {{ y }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="grid md:grid-cols-3 gap-6">
+  <!-- Balances Table -->
+  <div class="md:col-span-2">
+    <div class="card overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="table-header">Employee</th>
+            <th class="table-header">Leave Type</th>
+            <th class="table-header">Entitled</th>
+            <th class="table-header">Used</th>
+            <th class="table-header">Remaining</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for b in balances %}
+          <tr class="hover:bg-gray-50">
+            <td class="table-cell font-medium">{{ b.employee.get_full_name }}</td>
+            <td class="table-cell">{{ b.leave_type.name }}</td>
+            <td class="table-cell">{{ b.entitled_days }}</td>
+            <td class="table-cell text-orange-600">{{ b.used_days }}</td>
+            <td class="table-cell font-semibold {% if b.remaining <= 0 %}text-red-600{% else %}text-green-600{% endif %}">
+              {{ b.remaining }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No balances for {{ year }}.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Set Balance Form -->
+  <div class="card p-5">
+    <h3 class="font-semibold text-gray-900 mb-4">Set Balance</h3>
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Employee</label>
+        {{ form.employee }}
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Leave Type</label>
+        {{ form.leave_type }}
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Year</label>
+        {{ form.year }}
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Entitled Days</label>
+        {{ form.entitled_days }}
+      </div>
+      {% if form.errors %}
+      <p class="text-xs text-red-600">Please check all fields.</p>
+      {% endif %}
+      <button type="submit" class="btn-primary w-full justify-center">Save Balance</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

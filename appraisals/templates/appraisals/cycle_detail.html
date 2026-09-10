@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}{{ cycle.name }}{% endblock %}
+{% block page_title %}{{ cycle.name }}{% endblock %}
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'appraisal_cycle_edit' cycle.pk %}" class="btn-secondary">Edit Cycle</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Cycle Info -->
+  <div class="space-y-4">
+    <div class="card p-5">
+      <dl class="space-y-3 text-sm">
+        <div><dt class="text-gray-500">Period</dt><dd>{{ cycle.start_date }} — {{ cycle.end_date }}</dd></div>
+        <div><dt class="text-gray-500">Status</dt><dd>
+          <span class="badge {% if cycle.status == 'active' %}bg-green-100 text-green-700{% elif cycle.status == 'draft' %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ cycle.get_status_display }}</span>
+        </dd></div>
+        <div><dt class="text-gray-500">Total Appraisals</dt><dd class="font-medium">{{ appraisals.count }}</dd></div>
+      </dl>
+    </div>
+    {% if user.is_hr_or_admin %}
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-4">Add Appraisal</h3>
+      <form method="post">
+        {% csrf_token %}
+        <div class="space-y-3">
+          {% for field in appraisal_form %}
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-primary mt-4 w-full justify-center">Add</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Appraisals Table -->
+  <div class="lg:col-span-2">
+    <div class="card overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h3 class="font-semibold text-gray-900">Appraisals</h3>
+      </div>
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="table-header">Employee</th>
+            <th class="table-header">Manager</th>
+            <th class="table-header">Status</th>
+            <th class="table-header">Rating</th>
+            <th class="table-header"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for a in appraisals %}
+          <tr class="hover:bg-gray-50">
+            <td class="table-cell font-medium">{{ a.employee.get_full_name|default:a.employee.username }}</td>
+            <td class="table-cell text-gray-500">{{ a.manager.get_full_name|default:"—" }}</td>
+            <td class="table-cell">
+              <span class="badge
+                {% if a.status == 'completed' %}bg-green-100 text-green-700
+                {% elif a.status == 'manager_review' %}bg-blue-100 text-blue-700
+                {% elif a.status == 'self_review' %}bg-yellow-100 text-yellow-700
+                {% else %}bg-gray-100 text-gray-600{% endif %}">
+                {{ a.get_status_display }}
+              </span>
+            </td>
+            <td class="table-cell">
+              {% if a.manager_rating %}
+              <div class="flex gap-0.5">
+                {% for i in "12345" %}
+                <span class="text-sm {% if forloop.counter <= a.manager_rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                {% endfor %}
+              </div>
+              {% else %}—{% endif %}
+            </td>
+            <td class="table-cell"><a href="{% url 'appraisal_detail' a.pk %}" class="text-blue-600 hover:underline text-xs">View</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No appraisals yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

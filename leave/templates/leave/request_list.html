@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Leave Requests{% endblock %}
+{% block page_title %}Leave Requests{% endblock %}
+{% block top_actions %}
+  <a href="{% url 'leave_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Request Leave
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter -->
+<div class="card p-4 mb-4 flex flex-wrap gap-2">
+  {% for val, label in status_choices %}
+  <a href="?status={{ val }}"
+     class="px-3 py-1.5 rounded-full text-xs font-medium transition
+       {% if status_filter == val %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+  <a href="?" class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">All</a>
+</div>
+
+<!-- Table -->
+<div class="card overflow-hidden">
+  <table class="w-full">
+    <thead class="bg-gray-50">
+      <tr>
+        {% if user.is_hr_or_admin %}<th class="table-header">Employee</th>{% endif %}
+        <th class="table-header">Type</th>
+        <th class="table-header">Period</th>
+        <th class="table-header">Days</th>
+        <th class="table-header">Status</th>
+        <th class="table-header">Submitted</th>
+        <th class="table-header"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for r in requests %}
+      <tr class="hover:bg-gray-50">
+        {% if user.is_hr_or_admin %}<td class="table-cell font-medium">{{ r.employee.get_full_name }}</td>{% endif %}
+        <td class="table-cell">{{ r.leave_type.name }}</td>
+        <td class="table-cell text-gray-500 text-xs">{{ r.start_date|date:"d M Y" }} — {{ r.end_date|date:"d M Y" }}</td>
+        <td class="table-cell font-medium">{{ r.days }}</td>
+        <td class="table-cell">
+          <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            {{ r.get_status_display }}
+          </span>
+        </td>
+        <td class="table-cell text-gray-400 text-xs">{{ r.created_at|date:"d M Y" }}</td>
+        <td class="table-cell text-right">
+          <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">View</a>
+          {% if r.status == 'pending' and r.employee == user %}
+          · <a href="{% url 'leave_cancel' r.pk %}" class="text-red-500 hover:underline text-xs"
+              onclick="return confirm('Cancel this request?')">Cancel</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="table-cell text-center text-gray-400 py-10">No leave requests found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

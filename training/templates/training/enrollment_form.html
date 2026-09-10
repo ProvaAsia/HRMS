@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Edit Enrollment{% endblock %}
+{% block page_title %}Edit Enrollment{% endblock %}
+{% block content %}
+<div class="max-w-lg">
+  <div class="card p-6">
+    <p class="text-sm text-gray-500 mb-4">Training: <strong>{{ enrollment.training.title }}</strong></p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="space-y-4">
+        {% for field in form %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button type="submit" class="btn-primary">Save</button>
+        <a href="{% url 'training_detail' enrollment.training.pk %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

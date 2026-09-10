@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Training{% endblock %}
+{% block page_title %}Training & Development{% endblock %}
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'training_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Program
+  </a>
+  {% endif %}
+  <a href="{% url 'my_trainings' %}" class="btn-secondary">My Trainings</a>
+{% endblock %}
+
+{% block content %}
+<div class="flex gap-2 mb-5 flex-wrap">
+  <a href="{% url 'training_list' %}" class="px-3 py-1.5 rounded-lg text-sm font-medium border {% if not status_filter %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-gray-600 border-gray-300 hover:bg-gray-50{% endif %}">All</a>
+  {% for val, label in status_choices %}
+  <a href="?status={{ val }}" class="px-3 py-1.5 rounded-lg text-sm font-medium border {% if status_filter == val %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-gray-600 border-gray-300 hover:bg-gray-50{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+  {% for p in programs %}
+  <div class="card p-5 flex flex-col gap-3">
+    <div class="flex items-start justify-between">
+      <div>
+        <h3 class="font-semibold text-gray-900">{{ p.title }}</h3>
+        {% if p.category %}<p class="text-xs text-blue-600 mt-0.5">{{ p.category }}</p>{% endif %}
+      </div>
+      <span class="badge flex-shrink-0
+        {% if p.status == 'upcoming' %}bg-blue-100 text-blue-700
+        {% elif p.status == 'ongoing' %}bg-green-100 text-green-700
+        {% elif p.status == 'completed' %}bg-gray-100 text-gray-600
+        {% else %}bg-red-100 text-red-700{% endif %}">
+        {{ p.get_status_display }}
+      </span>
+    </div>
+    <p class="text-sm text-gray-600 line-clamp-2">{{ p.description }}</p>
+    <div class="text-xs text-gray-500 space-y-1">
+      <div>📅 {{ p.start_date }} — {{ p.end_date }}</div>
+      <div>👤 {{ p.trainer }}</div>
+      <div>📍 {{ p.location }}</div>
+      <div>{{ p.enrolled_count }}/{{ p.max_participants }} enrolled</div>
+    </div>
+    <a href="{% url 'training_detail' p.pk %}" class="btn-secondary w-full justify-center text-xs py-1.5">View Details</a>
+  </div>
+  {% empty %}
+  <div class="col-span-3 text-center py-16 text-gray-400">
+    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg>
+    <p>No training programs yet.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}My Appraisals{% endblock %}
+{% block page_title %}My Appraisals{% endblock %}
+{% block content %}
+<div class="card overflow-hidden">
+  <table class="w-full">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="table-header">Cycle</th>
+        <th class="table-header">Period</th>
+        <th class="table-header">Manager</th>
+        <th class="table-header">Status</th>
+        <th class="table-header">Rating</th>
+        <th class="table-header"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for a in appraisals %}
+      <tr class="hover:bg-gray-50">
+        <td class="table-cell font-medium">{{ a.cycle.name }}</td>
+        <td class="table-cell text-gray-500 text-xs">{{ a.cycle.start_date }} — {{ a.cycle.end_date }}</td>
+        <td class="table-cell">{{ a.manager.get_full_name|default:"—" }}</td>
+        <td class="table-cell"><span class="badge {% if a.status == 'completed' %}bg-green-100 text-green-700{% elif a.status == 'manager_review' %}bg-blue-100 text-blue-700{% elif a.status == 'self_review' %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ a.get_status_display }}</span></td>
+        <td class="table-cell">
+          {% if a.manager_rating %}
+          {% for i in "12345" %}<span class="{% if forloop.counter <= a.manager_rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>{% endfor %}
+          {% else %}—{% endif %}
+        </td>
+        <td class="table-cell"><a href="{% url 'appraisal_detail' a.pk %}" class="text-blue-600 hover:underline text-xs">View</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="table-cell text-center text-gray-400 py-10">No appraisals found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

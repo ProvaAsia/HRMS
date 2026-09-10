@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}{{ program.title }}{% endblock %}
+{% block page_title %}{{ program.title }}{% endblock %}
+{% block top_actions %}
+  {% if user.is_hr_or_admin %}
+  <a href="{% url 'training_edit' program.pk %}" class="btn-secondary">Edit</a>
+  {% endif %}
+  {% if not user_enrolled and program.status == 'upcoming' %}
+  <form method="post" class="inline">{% csrf_token %}<button name="self_enroll" type="submit" class="btn-primary">Enroll Myself</button></form>
+  {% elif user_enrolled %}
+  <span class="px-3 py-2 bg-green-100 text-green-700 text-sm rounded-lg font-medium">✓ Enrolled</span>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="space-y-4">
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-4">Program Details</h3>
+      <dl class="space-y-3 text-sm">
+        <div><dt class="text-gray-500">Trainer</dt><dd class="font-medium">{{ program.trainer }}</dd></div>
+        {% if program.category %}<div><dt class="text-gray-500">Category</dt><dd>{{ program.category }}</dd></div>{% endif %}
+        <div><dt class="text-gray-500">Start Date</dt><dd>{{ program.start_date }}</dd></div>
+        <div><dt class="text-gray-500">End Date</dt><dd>{{ program.end_date }}</dd></div>
+        <div><dt class="text-gray-500">Location</dt><dd>{{ program.location }}</dd></div>
+        <div><dt class="text-gray-500">Capacity</dt><dd>{{ program.enrolled_count }}/{{ program.max_participants }}</dd></div>
+        <div><dt class="text-gray-500">Status</dt><dd>
+          <span class="badge {% if program.status == 'ongoing' %}bg-green-100 text-green-700{% elif program.status == 'upcoming' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ program.get_status_display }}</span>
+        </dd></div>
+      </dl>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-2">Description</h3>
+      <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ program.description }}</p>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2 space-y-4">
+    <div class="card overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h3 class="font-semibold text-gray-900">Participants ({{ enrollments.count }})</h3>
+      </div>
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="table-header">Employee</th>
+            <th class="table-header">Status</th>
+            <th class="table-header">Score</th>
+            <th class="table-header">Enrolled</th>
+            {% if user.is_hr_or_admin %}<th class="table-header">Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for e in enrollments %}
+          <tr class="hover:bg-gray-50">
+            <td class="table-cell font-medium">{{ e.employee.get_full_name|default:e.employee.username }}</td>
+            <td class="table-cell">
+              <span class="badge {% if e.status == 'completed' %}bg-green-100 text-green-700{% elif e.status == 'cancelled' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">{{ e.get_status_display }}</span>
+            </td>
+            <td class="table-cell">{{ e.score|default:"—" }}</td>
+            <td class="table-cell text-gray-500">{{ e.enrolled_at|date:"d M Y" }}</td>
+            {% if user.is_hr_or_admin %}
+            <td class="table-cell">
+              <div class="flex gap-2">
+                <a href="{% url 'enrollment_update' e.pk %}" class="text-blue-600 hover:underline text-xs">Edit</a>
+                <a href="{% url 'enrollment_delete' e.pk %}" class="text-red-600 hover:underline text-xs">Remove</a>
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No participants yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if user.is_hr_or_admin %}
+    <div class="card p-5">
+      <h3 class="font-semibold text-gray-900 mb-4">Add Participant</h3>
+      <form method="post">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {% for field in enroll_form %}
+          <div class="{% if field.name == 'notes' %}col-span-full{% endif %}">
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-primary mt-4">Add</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
