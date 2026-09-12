@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load attendance_extras %}
+{% block title %}Timesheet ของฉัน{% endblock %}
+{% block page_title %}Timesheet ของฉัน{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'correction_request_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+    <span data-th="ขอแก้ไขเวลา" data-en="Request Correction">ขอแก้ไขเวลา</span>
+  </a>
+  <a href="{% url 'attendance_dashboard' %}" class="btn-secondary">← กลับ</a>
+{% endblock %}
+
+{% block content %}
+<!-- Month filter -->
+<div class="card p-4 mb-5">
+  <form method="get" class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs text-gray-500 mb-1" data-th="ปี" data-en="Year">ปี</label>
+      <select name="year" class="form-input py-1.5 text-sm">
+        {% for y in "2024 2025 2026 2027"|split:" " %}
+        <option value="{{ y }}" {% if y|add:0 == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 mb-1" data-th="เดือน" data-en="Month">เดือน</label>
+      <select name="month" class="form-input py-1.5 text-sm">
+        {% for m in "1 2 3 4 5 6 7 8 9 10 11 12"|split:" " %}
+        <option value="{{ m }}" {% if m|add:0 == month %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-secondary py-1.5 text-sm" data-th="ค้นหา" data-en="Search">ค้นหา</button>
+  </form>
+</div>
+
+<!-- Summary row -->
+<div class="grid grid-cols-3 gap-4 mb-5">
+  <div class="card p-4 text-center">
+    <p class="text-xs text-gray-400 mb-1" data-th="ชั่วโมงรวม" data-en="Total Work Hours">ชั่วโมงรวม</p>
+    <p class="text-xl font-bold text-blue-700">{{ total_hours|floatformat:1 }} h</p>
+  </div>
+  <div class="card p-4 text-center">
+    <p class="text-xs text-gray-400 mb-1" data-th="วันลาที่อนุมัติ" data-en="Approved Leave">วันลา</p>
+    <p class="text-xl font-bold text-purple-600">{{ leave_records.count }}</p>
+  </div>
+  <div class="card p-4 text-center">
+    <p class="text-xs text-gray-400 mb-1" data-th="OT รวม (h)" data-en="Total OT (h)">OT รวม</p>
+    <p class="text-xl font-bold text-orange-600">{{ total_ot_hours|floatformat:1 }}</p>
+  </div>
+</div>
+
+<!-- Attendance records table -->
+<div class="card overflow-hidden mb-5">
+  <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+    <h3 class="font-semibold text-gray-700 text-sm" data-th="บันทึกเวลา" data-en="Attendance Records">บันทึกเวลา</h3>
+  </div>
+  {% if records %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+          <th class="px-4 py-3 text-left" data-th="วันที่" data-en="Date">วันที่</th>
+          <th class="px-4 py-3 text-left" data-th="เวลาเข้า" data-en="Clock In">เวลาเข้า</th>
+          <th class="px-4 py-3 text-left" data-th="เวลาออก" data-en="Clock Out">เวลาออก</th>
+          <th class="px-4 py-3 text-right" data-th="ชั่วโมง" data-en="Hours">ชั่วโมง</th>
+          <th class="px-4 py-3 text-left" data-th="สถานะ" data-en="Status">สถานะ</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for r in records %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium text-gray-900">{{ r.date|date:"d M Y" }}</td>
+          <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ r.clock_in|default:"—" }}</td>
+          <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ r.clock_out|default:"—" }}</td>
+          <td class="px-4 py-3 text-right font-medium font-mono text-xs">{{ r.work_hours|floatformat:2 }}</td>
+          <td class="px-4 py-3">
+            <span class="badge text-xs
+              {% if r.status == 'present' %}bg-green-50 text-green-700
+              {% elif r.status == 'late' %}bg-yellow-50 text-yellow-700
+              {% elif r.status == 'wfh' %}bg-blue-50 text-blue-700
+              {% elif r.status == 'absent' %}bg-red-50 text-red-700
+              {% elif r.status == 'leave' %}bg-purple-50 text-purple-700
+              {% elif r.status == 'half_day' %}bg-orange-50 text-orange-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ r.get_status_display }}
+            </span>
+            {% if correction_by_date|default:"" %}
+              {% with cs=correction_by_date|default:{} %}
+                {% if r.date in cs %}
+                  <span class="ml-1 badge text-xs
+                    {% if cs|default:{}|key:r.date == 'pending' %}bg-yellow-50 text-yellow-600
+                    {% elif cs|default:{}|key:r.date == 'approved' %}bg-green-50 text-green-600
+                    {% else %}bg-red-50 text-red-600{% endif %}">
+                    Correction: {{ cs|default:{}|key:r.date }}
+                  </span>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'correction_request_create_for_record' r.pk %}"
+               class="text-xs text-blue-600 hover:underline" data-th="แก้ไข" data-en="Fix">แก้ไข</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="p-8 text-center text-sm text-gray-400">
+    <p data-th="ไม่มีข้อมูลในเดือนนี้" data-en="No records this month">ไม่มีข้อมูลในเดือนนี้</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Leave records -->
+{% if leave_records %}
+<div class="card overflow-hidden mb-5">
+  <div class="p-4 border-b border-gray-100">
+    <h3 class="font-semibold text-gray-700 text-sm" data-th="การลาที่อนุมัติ" data-en="Approved Leaves">การลาที่อนุมัติ</h3>
+  </div>
+  <div class="divide-y divide-gray-50">
+    {% for lr in leave_records %}
+    <div class="px-4 py-3 flex items-center justify-between text-sm">
+      <div>
+        <p class="font-medium text-gray-900">{{ lr.leave_type.name }}</p>
+        <p class="text-xs text-gray-400">{{ lr.start_date|date:"d M Y" }} → {{ lr.end_date|date:"d M Y" }}</p>
+      </div>
+      <span class="badge bg-purple-50 text-purple-700">{{ lr.start_date|date:"d M" }}{% if lr.start_date != lr.end_date %} – {{ lr.end_date|date:"d M" }}{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- OT records -->
+{% if ot_records %}
+<div class="card overflow-hidden">
+  <div class="p-4 border-b border-gray-100">
+    <h3 class="font-semibold text-gray-700 text-sm" data-th="OT ที่อนุมัติ" data-en="Approved Overtime">OT ที่อนุมัติ</h3>
+  </div>
+  <div class="divide-y divide-gray-50">
+    {% for ot in ot_records %}
+    <div class="px-4 py-3 flex items-center justify-between text-sm">
+      <p class="font-medium text-gray-900">{{ ot.date|date:"d M Y" }}</p>
+      <span class="badge bg-orange-50 text-orange-700">{{ ot.hours }} h</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
