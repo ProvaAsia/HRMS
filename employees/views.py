@@ -53,22 +53,22 @@ def employee_list(request):
         })
 
     elif user.is_manager:
-        # Manager เห็นตัวเองและลูกน้อง (read-only)
+        # Manager เห็นตัวเองเป็น banner และลูกน้องเป็น card grid (read-only)
         try:
             mgr_profile = user.employee_profile
-            profiles = EmployeeProfile.objects.filter(
-                Q(pk=mgr_profile.pk) | Q(direct_manager=mgr_profile)
-            ).select_related('user', 'department', 'division')
+            subordinate_profiles = EmployeeProfile.objects.filter(
+                direct_manager=mgr_profile
+            ).select_related('user', 'department', 'division').order_by('first_name_en')
         except EmployeeProfile.DoesNotExist:
-            profiles = EmployeeProfile.objects.none()
+            mgr_profile = None
+            subordinate_profiles = EmployeeProfile.objects.none()
 
         return render(request, 'employees/list.html', {
-            'profiles': profiles,
+            'is_manager_view': True,
+            'mgr_profile': mgr_profile,
+            'subordinate_profiles': subordinate_profiles,
             'departments': Department.objects.all(),
             'employment_types': EmployeeProfile.EMPLOYMENT_TYPE_CHOICES,
-            'q': '',
-            'selected_dept': '',
-            'selected_type': '',
             'can_edit': False,
         })
 
