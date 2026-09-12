@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
+from django.db import models
 import json
 import math
 from datetime import date as date_cls
@@ -184,7 +185,18 @@ def request_create(request):
     except (LeaveType.DoesNotExist, LeaveType.MultipleObjectsReturned):
         pass
 
-    form = LeaveRequestForm(request.POST or None)
+    # Sick Leave type id — for JS to detect which type needs cert
+    sick_leave_id = None
+    try:
+        sick_lt = LeaveType.objects.filter(
+            models.Q(name__icontains='sick') | models.Q(name_th__icontains='ป่วย')
+        ).first()
+        if sick_lt:
+            sick_leave_id = sick_lt.pk
+    except Exception:
+        pass
+
+    form = LeaveRequestForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         req = form.save(commit=False)
         req.employee = request.user
@@ -197,6 +209,7 @@ def request_create(request):
         'title': 'ขอลา',
         'balance_by_type_json': json.dumps(balance_by_type),
         'lwp_id': lwp_id,
+        'sick_leave_id': sick_leave_id,
         'balance_summary': balance_summary,
     })
 

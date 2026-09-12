@@ -52,6 +52,21 @@
         <dd class="font-medium mt-0.5">{{ req.reviewed_by.get_full_name }}</dd>
       </div>
       {% endif %}
+      {% if req.medical_certificate %}
+      <div class="col-span-2">
+        <dt class="text-gray-500" data-th="ใบรับรองแพทย์" data-en="Medical Certificate">ใบรับรองแพทย์</dt>
+        <dd class="mt-0.5">
+          <a href="{{ req.medical_certificate.url }}" target="_blank"
+             class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline font-medium">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+            </svg>
+            <span data-th="ดูใบรับรองแพทย์" data-en="View Medical Certificate">ดูใบรับรองแพทย์</span>
+          </a>
+        </dd>
+      </div>
+      {% endif %}
       {% if req.rejection_reason %}
       <div class="col-span-2">
         <dt class="text-gray-500" data-th="เหตุผลที่ไม่อนุมัติ" data-en="Rejection Reason">เหตุผลที่ไม่อนุมัติ</dt>
