@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils.crypto import get_random_string
+import calendar
 
 from django.utils import timezone
 from .models import User
@@ -42,6 +43,60 @@ def dashboard(request):
         'pending_ot': OTRequest.objects.filter(status='pending').count(),
         'today_attendance': AttendanceRecord.objects.filter(date=today).count(),
     }
+
+    # Manager-specific: pending approvals from direct reports + monthly leave calendar
+    user = request.user
+    if user.can_approve:
+        direct_reports = user.get_direct_report_users()
+        if direct_reports.exists():
+            # Pending leave/OT from direct reports
+            context['mgr_pending_leave'] = LeaveRequest.objects.filter(
+                employee__in=direct_reports, status='pending'
+            ).select_related('employee', 'leave_type').order_by('-created_at')[:10]
+            context['mgr_pending_ot'] = OTRequest.objects.filter(
+                employee__in=direct_reports, status='pending'
+            ).select_related('employee').order_by('-created_at')[:10]
+            context['mgr_pending_leave_count'] = LeaveRequest.objects.filter(
+                employee__in=direct_reports, status='pending'
+            ).count()
+            context['mgr_pending_ot_count'] = OTRequest.objects.filter(
+                employee__in=direct_reports, status='pending'
+            ).count()
+
+            # Monthly leave calendar — approved leaves this month
+            month_start = today.replace(day=1)
+            month_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+            approved_leaves = LeaveRequest.objects.filter(
+                employee__in=direct_reports,
+                status='approved',
+                start_date__lte=month_end,
+                end_date__gte=month_start,
+            ).select_related('employee', 'leave_type').order_by('start_date')
+
+            # Build calendar days list
+            num_days = month_end.day
+            from datetime import date as date_cls
+            days_data = []
+            for day in range(1, num_days + 1):
+                d = date_cls(today.year, today.month, day)
+                on_leave = []
+                for lr in approved_leaves:
+                    if lr.start_date <= d <= lr.end_date:
+                        on_leave.append(lr)
+                days_data.append({
+                    'date': d,
+                    'weekday': d.weekday(),  # 0=Mon,6=Sun
+                    'is_today': d == today,
+                    'on_leave': on_leave,
+                    'on_leave_extra': max(0, len(on_leave) - 2),
+                })
+            # Pad the start of the grid (Monday = 0)
+            first_offset = month_start.weekday()
+            empty_prefix = list(range(first_offset))
+            context['calendar_days'] = days_data
+            context['calendar_empty_prefix'] = empty_prefix
+            context['calendar_month'] = today
+
     return render(request, 'dashboard.html', context)
 
 

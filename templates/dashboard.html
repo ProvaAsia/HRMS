@@ -69,6 +69,131 @@
 </div>
 {% endif %}
 
+{% if mgr_pending_leave_count is not None %}
+<!-- Manager Section: Pending Approvals + Leave Calendar -->
+<div class="mb-5">
+  <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">ทีมของฉัน</h2>
+
+  <!-- Pending Approval Counts -->
+  <div class="grid grid-cols-2 gap-4 mb-4">
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#FFF7ED;">
+            <svg class="w-5 h-5" style="color:#EA580C;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 leading-none mb-0.5">รออนุมัติวันลา</p>
+            <p class="text-2xl font-bold text-gray-900">{{ mgr_pending_leave_count }}</p>
+          </div>
+        </div>
+        {% if mgr_pending_leave_count > 0 %}
+        <a href="{% url 'leave_list' %}?status=pending" class="btn-primary text-xs py-1.5 px-3">อนุมัติ →</a>
+        {% endif %}
+      </div>
+      {% if mgr_pending_leave %}
+      <div class="space-y-1.5 border-t border-gray-50 pt-3">
+        {% for lr in mgr_pending_leave|slice:":4" %}
+        <div class="flex items-center gap-2 text-xs">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 text-xs" style="background:#152057;">
+            {{ lr.employee.first_name.0 }}
+          </div>
+          <span class="text-gray-700 font-medium flex-1 truncate">{{ lr.employee.get_full_name }}</span>
+          <span class="text-gray-400">{{ lr.start_date|date:"d M" }}</span>
+          <span class="badge bg-orange-50 text-orange-600" style="font-size:10px;padding:1px 6px;">{{ lr.days }}d</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#FEF2F2;">
+            <svg class="w-5 h-5" style="color:#DC2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 leading-none mb-0.5">รออนุมัติ OT</p>
+            <p class="text-2xl font-bold text-gray-900">{{ mgr_pending_ot_count }}</p>
+          </div>
+        </div>
+        {% if mgr_pending_ot_count > 0 %}
+        <a href="{% url 'ot_list' %}?status=pending" class="btn-primary text-xs py-1.5 px-3">อนุมัติ →</a>
+        {% endif %}
+      </div>
+      {% if mgr_pending_ot %}
+      <div class="space-y-1.5 border-t border-gray-50 pt-3">
+        {% for ot in mgr_pending_ot|slice:":4" %}
+        <div class="flex items-center gap-2 text-xs">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 text-xs" style="background:#152057;">
+            {{ ot.employee.first_name.0 }}
+          </div>
+          <span class="text-gray-700 font-medium flex-1 truncate">{{ ot.employee.get_full_name }}</span>
+          <span class="text-gray-400">{{ ot.date|date:"d M" }}</span>
+          <span class="badge bg-red-50 text-red-600" style="font-size:10px;padding:1px 6px;">{{ ot.hours }}h</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Monthly Leave Calendar -->
+  {% if calendar_days %}
+  <div class="card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-900">ตารางลาของทีม — {{ calendar_month|date:"F Y" }}</h3>
+      <a href="{% url 'leave_list' %}" class="text-xs text-blue-600 hover:underline">ดูทั้งหมด →</a>
+    </div>
+    <div class="overflow-x-auto">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-width:520px;">
+        <!-- Day headers -->
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">จ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">อ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">พ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">พฤ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">ศ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#DC2626;padding:4px 0;">ส</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#DC2626;padding:4px 0;">อา</div>
+        <!-- Empty prefix cells -->
+        {% for _ in calendar_empty_prefix %}<div></div>{% endfor %}
+        <!-- Day cells -->
+        {% for day in calendar_days %}
+        <div style="border-radius:8px;padding:4px 3px;min-height:54px;border:1.5px solid {% if day.is_today %}#2563EB{% else %}#F3F4F6{% endif %};background:{% if day.is_today %}#EFF6FF{% elif day.weekday >= 5 %}#FEF2F2{% else %}#fff{% endif %};">
+          <div style="font-size:11px;font-weight:{% if day.is_today %}700{% else %}500{% endif %};color:{% if day.is_today %}#2563EB{% elif day.weekday >= 5 %}#DC2626{% else %}#374151{% endif %};text-align:center;margin-bottom:2px;">{{ day.date.day }}</div>
+          {% for lr in day.on_leave|slice:":2" %}
+          <div style="background:#FEF3C7;border-radius:3px;padding:1px 3px;font-size:9px;color:#92400E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;" title="{{ lr.employee.get_full_name }} — {{ lr.leave_type }}">{{ lr.employee.first_name }}</div>
+          {% endfor %}
+          {% if day.on_leave_extra > 0 %}
+          <div style="font-size:9px;color:#6B7280;text-align:center;">+{{ day.on_leave_extra }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <!-- Today's leave summary -->
+    {% for day in calendar_days %}
+      {% if day.is_today and day.on_leave %}
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <p class="text-xs font-medium text-gray-500 mb-2">ลาวันนี้:</p>
+        <div class="flex flex-wrap gap-2">
+          {% for lr in day.on_leave %}
+          <div class="flex items-center gap-1.5 text-xs bg-yellow-50 rounded-lg px-2 py-1">
+            <div class="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style="background:#152057;">{{ lr.employee.first_name.0 }}</div>
+            <span class="text-gray-700">{{ lr.employee.get_full_name }}</span>
+            <span class="text-gray-400">({{ lr.leave_type }})</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <!-- Upcoming Trainings -->
 <div class="card p-5">
   <div class="flex items-center justify-between mb-4">

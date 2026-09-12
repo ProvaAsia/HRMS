@@ -12,11 +12,12 @@
     body { background: #F0F2F8; }
 
     /* Sidebar */
-    .sidebar { background: #152057; width: 68px; }
-    .sidebar-icon { display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;color:rgba(255,255,255,0.55);transition:all .15s;margin:0 auto 4px; cursor:pointer; text-decoration:none; }
+    .sidebar { background: #152057; width: 80px; }
+    .sidebar-icon { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:64px;padding:7px 4px 6px;border-radius:12px;color:rgba(255,255,255,0.55);transition:all .15s;margin:0 auto 2px; cursor:pointer; text-decoration:none; }
     .sidebar-icon:hover { background:rgba(255,255,255,.12);color:#fff; }
     .sidebar-icon.active { background:rgba(255,255,255,.18);color:#fff; }
-    .sidebar-icon svg { width:22px;height:22px; flex-shrink:0; }
+    .sidebar-icon svg { width:20px;height:20px; flex-shrink:0; }
+    .sidebar-label { font-size:9px;font-weight:500;letter-spacing:.3px;line-height:1;text-align:center; }
 
     /* Cards */
     .card { background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); }
@@ -67,35 +68,44 @@
 
     <!-- Nav icons -->
     <nav class="flex-1 flex flex-col">
-      <a href="{% url 'dashboard' %}" class="sidebar-icon {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" title="Dashboard">
+      <a href="{% url 'dashboard' %}" class="sidebar-icon {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="sidebar-label">Dashboard</span>
       </a>
-      <a href="{% url 'employee_list' %}" class="sidebar-icon {% if 'employees' in request.path %}active{% endif %}" title="Employees">
+      <a href="{% url 'employee_list' %}" class="sidebar-icon {% if 'employees' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="sidebar-label">พนักงาน</span>
       </a>
-      <a href="{% url 'leave_dashboard' %}" class="sidebar-icon {% if 'leave' in request.path %}active{% endif %}" title="Leave">
+      <a href="{% url 'leave_dashboard' %}" class="sidebar-icon {% if 'leave' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="sidebar-label">วันลา</span>
       </a>
-      <a href="{% url 'ot_dashboard' %}" class="sidebar-icon {% if 'overtime' in request.path %}active{% endif %}" title="OT">
+      <a href="{% url 'ot_dashboard' %}" class="sidebar-icon {% if 'overtime' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="sidebar-label">ล่วงเวลา</span>
       </a>
-      <a href="{% url 'attendance_dashboard' %}" class="sidebar-icon {% if 'attendance' in request.path %}active{% endif %}" title="Attendance">
+      <a href="{% url 'attendance_dashboard' %}" class="sidebar-icon {% if 'attendance' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="sidebar-label">เวลางาน</span>
       </a>
-      <a href="{% url 'appraisal_cycle_list' %}" class="sidebar-icon {% if 'appraisals' in request.path %}active{% endif %}" title="Appraisals">
+      <a href="{% url 'appraisal_cycle_list' %}" class="sidebar-icon {% if 'appraisals' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="sidebar-label">ประเมิน</span>
       </a>
-      <a href="{% url 'org_chart' %}" class="sidebar-icon {% if 'org-chart' in request.path %}active{% endif %}" title="Org Chart">
+      <a href="{% url 'org_chart' %}" class="sidebar-icon {% if 'org-chart' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="4" height="4" rx="1"/><rect x="10" y="3" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/><rect x="3" y="17" width="4" height="4" rx="1"/><rect x="17" y="17" width="4" height="4" rx="1"/><line x1="5" y1="7" x2="5" y2="17"/><line x1="19" y1="7" x2="19" y2="17"/><line x1="12" y1="7" x2="12" y2="10"/><line x1="5" y1="17" x2="12" y2="14"/><line x1="19" y1="17" x2="12" y2="14"/></svg>
+        <span class="sidebar-label">โครงสร้าง</span>
       </a>
       {% if user.is_hr_or_admin %}
-      <a href="{% url 'training_list' %}" class="sidebar-icon {% if 'training' in request.path %}active{% endif %}" title="Training">
+      <a href="{% url 'training_list' %}" class="sidebar-icon {% if 'training' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span class="sidebar-label">อบรม</span>
       </a>
       {% endif %}
       {% if user.role == 'super_admin' %}
-      <a href="{% url 'masterdata_overview' %}" class="sidebar-icon {% if 'masterdata' in request.path %}active{% endif %}" title="Master Data">
+      <a href="{% url 'masterdata_overview' %}" class="sidebar-icon {% if 'masterdata' in request.path %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        <span class="sidebar-label">ข้อมูลหลัก</span>
       </a>
       {% endif %}
     </nav>
@@ -125,9 +135,21 @@
           <a href="?view=my" class="{% if request.GET.view == 'my' %}active{% endif %}">My View</a>
         </div>
         {% endif %}
-        <!-- Avatar -->
-        <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style="background:#152057;">
-          {{ user.initials }}
+        <!-- Avatar + user info -->
+        <div class="flex items-center gap-2">
+          <div class="text-right leading-tight hidden sm:block">
+            <p class="text-sm font-semibold text-gray-900">{{ user.get_full_name|default:user.username }}</p>
+            {% with profile=user.employee_profile %}
+            {% if profile.job_title %}
+            <p class="text-xs text-gray-400">{{ profile.job_title }}</p>
+            {% else %}
+            <p class="text-xs text-gray-400">{{ user.get_role_display }}</p>
+            {% endif %}
+            {% endwith %}
+          </div>
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style="background:#152057;">
+            {{ user.initials }}
+          </div>
         </div>
       </div>
     </div>
