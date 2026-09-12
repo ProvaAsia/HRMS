@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}Master Data{% endblock %}
+{% block page_title %}Master Data Management{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'masterdata_excel_template' %}" class="btn-secondary">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download Template
+  </a>
+  <form method="post" action="{% url 'masterdata_excel_upload' %}" enctype="multipart/form-data" style="display:inline-flex;align-items:center;gap:8px;">
+    {% csrf_token %}
+    <label class="btn-secondary" style="cursor:pointer;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload Excel
+      <input type="file" name="excel_file" accept=".xlsx" onchange="this.form.submit()" style="display:none;">
+    </label>
+  </form>
+{% endblock %}
+
+{% block content %}
+<style>
+  .tab-bar { display:flex; gap:4px; border-bottom:1.5px solid #E5E7EB; margin-bottom:24px; }
+  .tab-link {
+    padding:9px 18px; font-size:14px; font-weight:500; color:#6B7280;
+    text-decoration:none; border-bottom:2.5px solid transparent; margin-bottom:-1.5px;
+    transition:color .15s, border-color .15s;
+  }
+  .tab-link.active { color:#2563EB; border-bottom-color:#2563EB; }
+  .tab-link:hover:not(.active) { color:#374151; }
+
+  .data-table { width:100%; border-collapse:collapse; }
+  .data-table th { padding:10px 16px; text-align:left; font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:.06em; border-bottom:1.5px solid #F3F4F6; }
+  .data-table td { padding:12px 16px; font-size:14px; color:#374151; border-bottom:1px solid #F9FAFB; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table tr:hover td { background:#F9FAFB; }
+
+  .inline-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; padding:16px; background:#F9FAFB; border-radius:12px; margin-bottom:20px; border:1.5px dashed #E5E7EB; }
+  .inline-form-field { display:flex; flex-direction:column; gap:4px; }
+  .inline-form-field label { font-size:11px; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:.05em; }
+  .inline-form-field input, .inline-form-field select { padding:8px 11px; border:1.5px solid #E5E7EB; border-radius:9px; font-size:13px; color:#111827; outline:none; min-width:160px; }
+  .inline-form-field input:focus, .inline-form-field select:focus { border-color:#2563EB; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+
+  .action-btn { display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:12px;font-weight:500;text-decoration:none;border:none;cursor:pointer; }
+  .action-edit { background:#EEF2FF;color:#2563EB; }
+  .action-edit:hover { background:#DBEAFE; }
+  .action-delete { background:#FEF2F2;color:#DC2626; }
+  .action-delete:hover { background:#FEE2E2; }
+
+  .code-badge { display:inline-block;padding:2px 8px;background:#F3F4F6;border-radius:6px;font-size:12px;font-family:monospace;color:#374151;font-weight:600; }
+
+  .empty-state { text-align:center;padding:32px 0;color:#9CA3AF;font-size:14px; }
+</style>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <a href="?tab=division"     class="tab-link {% if tab == 'division' %}active{% endif %}">Division ({{ divisions|length }})</a>
+  <a href="?tab=department"   class="tab-link {% if tab == 'department' %}active{% endif %}">Department ({{ departments|length }})</a>
+  <a href="?tab=costcenter"   class="tab-link {% if tab == 'costcenter' %}active{% endif %}">Cost Center ({{ cost_centers|length }})</a>
+  <a href="?tab=worklocation" class="tab-link {% if tab == 'worklocation' %}active{% endif %}">Work Location ({{ work_locations|length }})</a>
+</div>
+
+<!-- ══ DIVISION ══════════════════════════════════════════════ -->
+{% if tab == 'division' %}
+<div class="card p-6">
+  <h3 style="font-size:15px;font-weight:600;color:#111827;margin-bottom:16px;">Add Division</h3>
+  <form method="post" action="{% url 'division_create' %}" class="inline-form">
+    {% csrf_token %}
+    <div class="inline-form-field">
+      <label>Code *</label>
+      <input name="code" placeholder="e.g. DIV001" required>
+    </div>
+    <div class="inline-form-field">
+      <label>Name *</label>
+      <input name="name" placeholder="Division name" required style="min-width:220px;">
+    </div>
+    <button type="submit" class="btn-primary" style="padding:8px 18px;align-self:flex-end;">+ Add</button>
+  </form>
+
+  {% if divisions %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Departments</th>
+        <th style="width:100px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for obj in divisions %}
+      <tr>
+        <td><span class="code-badge">{{ obj.code }}</span></td>
+        <td style="font-weight:500;">{{ obj.name }}</td>
+        <td style="color:#6B7280;">{{ obj.departments.count }}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'division_edit' obj.pk %}" class="action-btn action-edit">Edit</a>
+            <form method="post" action="{% url 'division_delete' obj.pk %}" onsubmit="return confirm('ลบ Division นี้?');">
+              {% csrf_token %}
+              <button type="submit" class="action-btn action-delete">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No divisions yet — add the first one above.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+<!-- ══ DEPARTMENT ════════════════════════════════════════════ -->
+{% if tab == 'department' %}
+<div class="card p-6">
+  <h3 style="font-size:15px;font-weight:600;color:#111827;margin-bottom:16px;">Add Department</h3>
+  <form method="post" action="{% url 'department_create' %}" class="inline-form">
+    {% csrf_token %}
+    <div class="inline-form-field">
+      <label>Code *</label>
+      <input name="code" placeholder="e.g. DEPT001" required>
+    </div>
+    <div class="inline-form-field">
+      <label>Name *</label>
+      <input name="name" placeholder="Department name" required style="min-width:220px;">
+    </div>
+    <div class="inline-form-field">
+      <label>Division</label>
+      <select name="division">
+        <option value="">— None —</option>
+        {% for d in divisions %}
+        <option value="{{ d.pk }}">{{ d.code }} — {{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-primary" style="padding:8px 18px;align-self:flex-end;">+ Add</button>
+  </form>
+
+  {% if departments %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Division</th>
+        <th style="width:100px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for obj in departments %}
+      <tr>
+        <td><span class="code-badge">{{ obj.code }}</span></td>
+        <td style="font-weight:500;">{{ obj.name }}</td>
+        <td style="color:#6B7280;">{{ obj.division.code|default:"—" }}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'department_edit' obj.pk %}" class="action-btn action-edit">Edit</a>
+            <form method="post" action="{% url 'department_delete' obj.pk %}" onsubmit="return confirm('ลบ Department นี้?');">
+              {% csrf_token %}
+              <button type="submit" class="action-btn action-delete">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No departments yet — add the first one above.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+<!-- ══ COST CENTER ═══════════════════════════════════════════ -->
+{% if tab == 'costcenter' %}
+<div class="card p-6">
+  <h3 style="font-size:15px;font-weight:600;color:#111827;margin-bottom:16px;">Add Cost Center</h3>
+  <form method="post" action="{% url 'costcenter_create' %}" class="inline-form">
+    {% csrf_token %}
+    <div class="inline-form-field">
+      <label>Code *</label>
+      <input name="code" placeholder="e.g. CC001" required>
+    </div>
+    <div class="inline-form-field">
+      <label>Name *</label>
+      <input name="name" placeholder="Cost Center name" required style="min-width:220px;">
+    </div>
+    <button type="submit" class="btn-primary" style="padding:8px 18px;align-self:flex-end;">+ Add</button>
+  </form>
+
+  {% if cost_centers %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th style="width:100px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for obj in cost_centers %}
+      <tr>
+        <td><span class="code-badge">{{ obj.code }}</span></td>
+        <td style="font-weight:500;">{{ obj.name }}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'costcenter_edit' obj.pk %}" class="action-btn action-edit">Edit</a>
+            <form method="post" action="{% url 'costcenter_delete' obj.pk %}" onsubmit="return confirm('ลบ Cost Center นี้?');">
+              {% csrf_token %}
+              <button type="submit" class="action-btn action-delete">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No cost centers yet — add the first one above.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+<!-- ══ WORK LOCATION ═════════════════════════════════════════ -->
+{% if tab == 'worklocation' %}
+<div class="card p-6">
+  <h3 style="font-size:15px;font-weight:600;color:#111827;margin-bottom:16px;">Add Work Location</h3>
+  <form method="post" action="{% url 'worklocation_create' %}" class="inline-form">
+    {% csrf_token %}
+    <div class="inline-form-field">
+      <label>Name *</label>
+      <input name="name" placeholder="e.g. Bangkok HQ" required style="min-width:220px;">
+    </div>
+    <div class="inline-form-field">
+      <label>Address</label>
+      <input name="address" placeholder="Full address (optional)" style="min-width:280px;">
+    </div>
+    <button type="submit" class="btn-primary" style="padding:8px 18px;align-self:flex-end;">+ Add</button>
+  </form>
+
+  {% if work_locations %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th style="width:100px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for obj in work_locations %}
+      <tr>
+        <td style="font-weight:500;">{{ obj.name }}</td>
+        <td style="color:#6B7280;">{{ obj.address|default:"—" }}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'worklocation_edit' obj.pk %}" class="action-btn action-edit">Edit</a>
+            <form method="post" action="{% url 'worklocation_delete' obj.pk %}" onsubmit="return confirm('ลบ Work Location นี้?');">
+              {% csrf_token %}
+              <button type="submit" class="action-btn action-delete">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No work locations yet — add the first one above.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

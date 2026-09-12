@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ type|title }}{% endblock %}
+{% block page_title %}Edit {{ type|title }}{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'masterdata_overview' %}" class="btn-secondary">← Master Data</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;">
+  <div class="card p-6">
+    <h3 style="font-size:15px;font-weight:600;color:#111827;margin-bottom:20px;">
+      Edit {{ type|title }}: <span style="color:#2563EB;">{{ obj }}</span>
+    </h3>
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        {% for field in fields %}
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">
+            {{ field.label }}
+          </label>
+          <input
+            type="text"
+            name="{{ field.name }}"
+            value="{{ field.value }}"
+            class="form-input"
+            required
+          >
+        </div>
+        {% endfor %}
+
+        {% if type == 'department' and divisions %}
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">
+            Division
+          </label>
+          <select name="division" class="form-input">
+            <option value="">— None —</option>
+            {% for d in divisions %}
+            <option value="{{ d.pk }}" {% if obj.division_id == d.pk %}selected{% endif %}>
+              {{ d.code }} — {{ d.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        {% if type == 'worklocation' %}
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">
+            Address
+          </label>
+          <input
+            type="text"
+            name="address"
+            value="{{ obj.address }}"
+            class="form-input"
+            placeholder="Full address (optional)"
+          >
+        </div>
+        {% endif %}
+
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <a href="{% url 'masterdata_overview' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
