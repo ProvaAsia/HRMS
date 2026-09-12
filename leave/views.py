@@ -125,24 +125,34 @@ def leave_dashboard(request):
 @login_required
 def request_list(request):
     user = request.user
-    if user.is_hr_or_admin:
-        requests = LeaveRequest.objects.select_related('employee', 'leave_type').all()
-    elif user.is_manager:
-        direct_report_users = user.get_direct_report_users()
-        requests = LeaveRequest.objects.filter(
-            Q(employee=user) | Q(employee__in=direct_report_users)
-        ).select_related('employee', 'leave_type')
-    else:
-        requests = LeaveRequest.objects.filter(employee=user)
-
     status = request.GET.get('status')
-    if status:
-        requests = requests.filter(status=status)
 
-    requests = requests.order_by('-created_at')
+    # คำขอของตัวเอง
+    my_requests = LeaveRequest.objects.filter(employee=user).select_related('employee', 'leave_type')
+
+    # คำขอทีม (ลูกน้อง / ทุกคนถ้าเป็น HR)
+    team_requests = None
+    if user.is_hr_or_admin:
+        team_requests = LeaveRequest.objects.exclude(employee=user).select_related('employee', 'leave_type')
+    elif user.can_approve:
+        direct_report_users = user.get_direct_report_users()
+        if direct_report_users.exists():
+            team_requests = LeaveRequest.objects.filter(
+                employee__in=direct_report_users
+            ).select_related('employee', 'leave_type')
+
+    if status:
+        my_requests = my_requests.filter(status=status)
+        if team_requests is not None:
+            team_requests = team_requests.filter(status=status)
+
+    my_requests = my_requests.order_by('-created_at')
+    if team_requests is not None:
+        team_requests = team_requests.order_by('-created_at')
 
     return render(request, 'leave/request_list.html', {
-        'requests': requests,
+        'my_requests': my_requests,
+        'team_requests': team_requests,
         'status_choices': LeaveRequest.STATUS_CHOICES,
         'status_filter': status,
     })
