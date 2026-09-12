@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}ขอแก้ไขเวลา{% endblock %}
+{% block page_title %}ขอแก้ไขเวลา{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'attendance_my_report' %}" class="btn-secondary">← กลับ</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+  <div class="card p-6">
+    {% if record %}
+    <!-- Pre-filled from existing record -->
+    <div class="bg-blue-50 rounded-lg p-4 mb-5">
+      <p class="text-xs font-semibold text-blue-700 mb-1" data-th="ข้อมูลปัจจุบัน" data-en="Current Record">ข้อมูลปัจจุบัน</p>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span class="text-blue-500 text-xs">วันที่</span>
+          <p class="font-medium text-blue-900">{{ record.date|date:"d M Y" }}</p>
+        </div>
+        <div>
+          <span class="text-blue-500 text-xs">สถานะ</span>
+          <p class="font-medium text-blue-900">{{ record.get_status_display }}</p>
+        </div>
+        <div>
+          <span class="text-blue-500 text-xs">เวลาเข้า</span>
+          <p class="font-medium text-blue-900 font-mono">{{ record.clock_in|default:"—" }}</p>
+        </div>
+        <div>
+          <span class="text-blue-500 text-xs">เวลาออก</span>
+          <p class="font-medium text-blue-900 font-mono">{{ record.clock_out|default:"—" }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          <span data-th="วันที่ที่ต้องการแก้ไข" data-en="Date to correct">วันที่ที่ต้องการแก้ไข</span>
+          <span class="text-red-500">*</span>
+        </label>
+        <input type="date" name="date"
+               value="{% if record %}{{ record.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               class="form-input" required>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" data-th="เวลาเข้าที่ถูกต้อง" data-en="Correct Clock In">เวลาเข้าที่ถูกต้อง</label>
+          <input type="time" name="requested_clock_in"
+                 value="{% if record %}{{ record.clock_in|default:'' }}{% endif %}"
+                 class="form-input">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" data-th="เวลาออกที่ถูกต้อง" data-en="Correct Clock Out">เวลาออกที่ถูกต้อง</label>
+          <input type="time" name="requested_clock_out"
+                 value="{% if record %}{{ record.clock_out|default:'' }}{% endif %}"
+                 class="form-input">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-th="สถานะที่ถูกต้อง" data-en="Correct Status">สถานะที่ถูกต้อง</label>
+        <select name="requested_status" class="form-input">
+          <option value="">— ไม่เปลี่ยน —</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if record and record.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          <span data-th="เหตุผลในการขอแก้ไข" data-en="Reason for correction">เหตุผลในการขอแก้ไข</span>
+          <span class="text-red-500">*</span>
+        </label>
+        <textarea name="reason" rows="3" class="form-input resize-none"
+                  placeholder="เช่น ลืมบันทึกเวลาออก, เวลาระบบผิดพลาด..."
+                  required></textarea>
+      </div>
+
+      <div class="pt-2">
+        <button type="submit" class="btn-primary w-full justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          <span data-th="ส่งคำขอแก้ไข" data-en="Submit Request">ส่งคำขอแก้ไข</span>
+        </button>
+        <p class="text-xs text-gray-400 text-center mt-2" data-th="คำขอจะถูกส่งไปให้หัวหน้าของคุณอนุมัติ" data-en="Request will be sent to your manager for approval">
+          คำขอจะถูกส่งไปให้หัวหน้าของคุณอนุมัติ
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

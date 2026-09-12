@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}คำขอแก้ไขของฉัน{% endblock %}
+{% block page_title %}คำขอแก้ไขเวลาของฉัน{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'correction_request_create' %}" class="btn-primary">+ ขอแก้ไขใหม่</a>
+  <a href="{% url 'attendance_dashboard' %}" class="btn-secondary">← กลับ</a>
+{% endblock %}
+
+{% block content %}
+<div class="card overflow-hidden">
+  {% if corrections %}
+  <div class="divide-y divide-gray-50">
+    {% for c in corrections %}
+    <div class="p-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <p class="font-semibold text-gray-900 text-sm">{{ c.date|date:"d M Y" }}</p>
+            <span class="badge text-xs
+              {% if c.status == 'pending' %}bg-yellow-50 text-yellow-700
+              {% elif c.status == 'approved' %}bg-green-50 text-green-700
+              {% else %}bg-red-50 text-red-700{% endif %}">
+              {% if c.status == 'pending' %}รอดำเนินการ
+              {% elif c.status == 'approved' %}อนุมัติแล้ว
+              {% else %}ปฏิเสธ{% endif %}
+            </span>
+          </div>
+          <p class="text-xs text-gray-500 mb-2">{{ c.reason }}</p>
+          <div class="flex flex-wrap gap-3 text-xs text-gray-400">
+            {% if c.requested_clock_in %}<span>เข้า: <span class="font-mono text-gray-600">{{ c.requested_clock_in }}</span></span>{% endif %}
+            {% if c.requested_clock_out %}<span>ออก: <span class="font-mono text-gray-600">{{ c.requested_clock_out }}</span></span>{% endif %}
+            {% if c.requested_status %}<span>สถานะ: <span class="text-gray-600">{{ c.requested_status }}</span></span>{% endif %}
+          </div>
+          {% if c.review_note %}
+          <p class="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">
+            <span class="font-medium">หมายเหตุหัวหน้า:</span> {{ c.review_note }}
+          </p>
+          {% endif %}
+        </div>
+        <p class="text-xs text-gray-400 whitespace-nowrap">{{ c.created_at|date:"d M Y" }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="p-12 text-center">
+    <svg class="w-10 h-10 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <p class="text-sm text-gray-400">ยังไม่มีคำขอแก้ไขเวลา</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

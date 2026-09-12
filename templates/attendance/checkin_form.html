@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}บันทึกเวลา{% endblock %}
+{% block page_title %}บันทึกเวลา{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'attendance_dashboard' %}" class="btn-secondary">← กลับ</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <div class="card p-6">
+    {% if record %}
+    <div class="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700">
+      <span data-th="แก้ไขข้อมูลของวันที่" data-en="Editing record for">แก้ไขข้อมูลของวันที่</span>
+      {{ record.date|date:"d M Y" }}
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn-primary w-full justify-center">
+        <span data-th="บันทึก" data-en="Save">บันทึก</span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

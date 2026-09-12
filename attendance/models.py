@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class AttendanceRecord(models.Model):
@@ -40,3 +41,41 @@ class AttendanceRecord(models.Model):
             if diff.total_seconds() > 0:
                 self.work_hours = round(diff.total_seconds() / 3600, 2)
         super().save(*args, **kwargs)
+
+
+class AttendanceCorrectionRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='correction_requests'
+    )
+    attendance_record = models.ForeignKey(
+        AttendanceRecord, on_delete=models.CASCADE,
+        related_name='correction_requests', null=True, blank=True
+    )
+    date = models.DateField()
+    requested_clock_in = models.TimeField(null=True, blank=True)
+    requested_clock_out = models.TimeField(null=True, blank=True)
+    requested_status = models.CharField(
+        max_length=20, choices=AttendanceRecord.STATUS_CHOICES, blank=True
+    )
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reviewed_corrections'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.employee.get_full_name()} — {self.date} ({self.get_status_display()})"

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}อนุมัติคำขอแก้ไขเวลา{% endblock %}
+{% block page_title %}คำขอแก้ไขเวลา — ทีม{% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'team_timesheet' %}" class="btn-secondary">← Timesheet ทีม</a>
+{% endblock %}
+
+{% block content %}
+{% regroup corrections by status as status_groups %}
+
+{% if corrections %}
+  {% for sg in status_groups %}
+  <div class="mb-6">
+    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+      {% if sg.grouper == 'pending' %}⏳ รอดำเนินการ ({{ sg.list|length }})
+      {% elif sg.grouper == 'approved' %}✅ อนุมัติแล้ว
+      {% else %}❌ ปฏิเสธแล้ว{% endif %}
+    </h3>
+    <div class="card overflow-hidden divide-y divide-gray-50">
+      {% for c in sg.list %}
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background:#152057">
+                {{ c.employee.first_name.0 }}{{ c.employee.last_name.0 }}
+              </div>
+              <div>
+                <p class="font-semibold text-gray-900 text-sm">{{ c.employee.get_full_name }}</p>
+                <p class="text-xs text-gray-400">{{ c.date|date:"d M Y" }} · ส่งเมื่อ {{ c.created_at|date:"d M Y" }}</p>
+              </div>
+            </div>
+
+            <p class="text-sm text-gray-600 ml-10 mb-2">{{ c.reason }}</p>
+
+            <div class="ml-10 flex flex-wrap gap-3 text-xs">
+              {% if c.requested_clock_in %}
+              <div class="flex items-center gap-1">
+                <span class="text-gray-400" data-th="เวลาเข้า" data-en="Clock In">เวลาเข้า:</span>
+                <span class="font-mono font-medium text-gray-700">{{ c.requested_clock_in }}</span>
+              </div>
+              {% endif %}
+              {% if c.requested_clock_out %}
+              <div class="flex items-center gap-1">
+                <span class="text-gray-400" data-th="เวลาออก" data-en="Clock Out">เวลาออก:</span>
+                <span class="font-mono font-medium text-gray-700">{{ c.requested_clock_out }}</span>
+              </div>
+              {% endif %}
+              {% if c.requested_status %}
+              <div class="flex items-center gap-1">
+                <span class="text-gray-400" data-th="สถานะ" data-en="Status">สถานะ:</span>
+                <span class="font-medium text-gray-700">{{ c.requested_status }}</span>
+              </div>
+              {% endif %}
+              {% if c.attendance_record %}
+              <div class="flex items-center gap-1 text-gray-400">
+                ปัจจุบัน:
+                <span class="font-mono">{{ c.attendance_record.clock_in|default:"—" }}</span> →
+                <span class="font-mono">{{ c.attendance_record.clock_out|default:"—" }}</span>
+                ({{ c.attendance_record.get_status_display }})
+              </div>
+              {% endif %}
+            </div>
+
+            {% if c.review_note %}
+            <p class="ml-10 mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">
+              <span class="font-medium">หมายเหตุ:</span> {{ c.review_note }}
+              {% if c.reviewed_by %}<span class="text-gray-400"> — {{ c.reviewed_by.get_full_name }}</span>{% endif %}
+            </p>
+            {% endif %}
+          </div>
+
+          {% if c.status == 'pending' %}
+          <a href="{% url 'correction_request_review' c.pk %}"
+             class="btn-primary py-1.5 px-4 text-xs whitespace-nowrap flex-shrink-0"
+             data-th="ดำเนินการ" data-en="Review">ดำเนินการ</a>
+          {% else %}
+          <span class="badge text-xs flex-shrink-0
+            {% if c.status == 'approved' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">
+            {% if c.status == 'approved' %}อนุมัติแล้ว{% else %}ปฏิเสธ{% endif %}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card p-12 text-center">
+  <svg class="w-10 h-10 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <p class="text-sm text-gray-400">ไม่มีคำขอแก้ไขเวลาจากทีม</p>
+</div>
+{% endif %}
+{% endblock %}

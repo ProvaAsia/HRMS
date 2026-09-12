@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}ข้อมูลการเข้างานทั้งหมด{% endblock %}
+{% block page_title %}ข้อมูลการเข้างาน (HR){% endblock %}
+
+{% block top_actions %}
+  <a href="{% url 'attendance_import_excel' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+    <span data-th="นำเข้า Excel" data-en="Import Excel">นำเข้า Excel</span>
+  </a>
+  <a href="{% url 'payroll_summary' %}" class="btn-secondary" data-th="สรุปเงินเดือน" data-en="Payroll Summary">สรุปเงินเดือน</a>
+{% endblock %}
+
+{% block content %}
+<!-- Month filter -->
+<div class="card p-4 mb-5">
+  <form method="get" class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">ปี</label>
+      <select name="year" class="form-input py-1.5 text-sm">
+        {% for y in "2024 2025 2026 2027"|split:" " %}
+        <option value="{{ y }}" {% if y|add:0 == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">เดือน</label>
+      <select name="month" class="form-input py-1.5 text-sm">
+        {% for m in "1 2 3 4 5 6 7 8 9 10 11 12"|split:" " %}
+        <option value="{{ m }}" {% if m|add:0 == month %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-primary py-1.5 text-sm">ค้นหา</button>
+  </form>
+</div>
+
+<div class="card overflow-hidden">
+  {% if records %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+          <th class="px-4 py-3 text-left">พนักงาน</th>
+          <th class="px-4 py-3 text-left">วันที่</th>
+          <th class="px-4 py-3 text-left">เวลาเข้า</th>
+          <th class="px-4 py-3 text-left">เวลาออก</th>
+          <th class="px-4 py-3 text-right">ชั่วโมง</th>
+          <th class="px-4 py-3 text-left">สถานะ</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for r in records %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium text-gray-900">{{ r.employee.get_full_name|default:r.employee.username }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ r.date|date:"d M Y" }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ r.clock_in|default:"—" }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ r.clock_out|default:"—" }}</td>
+          <td class="px-4 py-3 text-right font-mono text-xs">{{ r.work_hours|floatformat:2 }}</td>
+          <td class="px-4 py-3">
+            <span class="badge text-xs
+              {% if r.status == 'present' %}bg-green-50 text-green-700
+              {% elif r.status == 'late' %}bg-yellow-50 text-yellow-700
+              {% elif r.status == 'wfh' %}bg-blue-50 text-blue-700
+              {% elif r.status == 'absent' %}bg-red-50 text-red-700
+              {% elif r.status == 'leave' %}bg-purple-50 text-purple-700
+              {% elif r.status == 'half_day' %}bg-orange-50 text-orange-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ r.get_status_display }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'attendance_edit' r.pk %}" class="text-xs text-blue-600 hover:underline">แก้ไข</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="p-8 text-center text-sm text-gray-400">ไม่มีข้อมูลในเดือนนี้</div>
+  {% endif %}
+</div>
+{% endblock %}
