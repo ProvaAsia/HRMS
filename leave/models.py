@@ -12,6 +12,7 @@ class LeaveType(models.Model):
     annual_accrual = models.IntegerField(default=0, help_text="Extra days per year of service")
     requires_advance_days = models.IntegerField(default=0, help_text="Business days in advance required")
     is_paid = models.BooleanField(default=True)
+    is_lwp = models.BooleanField(default=False, help_text="ลาไม่รับค่าจ้าง (Leave Without Pay) — ใช้เป็น fallback เมื่อวันลาหมด")
     carry_over = models.BooleanField(default=False)
     description = models.TextField(blank=True)
 

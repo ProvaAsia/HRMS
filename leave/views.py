@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
+import json
 import math
 from datetime import date as date_cls
 from .models import LeaveType, LeaveBalance, LeaveRequest
@@ -72,13 +73,15 @@ def _get_balance_summary(user, year):
 
     summary = []
     for lt in leave_types:
+        # LWP ไม่มีวันสิทธิ์ — ไม่ต้องแสดงใน balance summary
+        if lt.is_lwp:
+            continue
+
         entitled, is_prorated, years_completed, months_rem = _compute_entitled_days(lt, join_date, year)
 
         if lt.pk in existing:
             bal = existing[lt.pk]
             used = float(bal.used_days)
-            # อัปเดต entitled_days ถ้าต่างจากที่คำนวณ (เช่น HR ตั้งค่าเอง ให้ใช้ค่า HR)
-            # ถ้า HR ยังไม่แตะ (ยังเป็น 0) ให้ใช้ค่าคำนวณ
             stored_entitled = float(bal.entitled_days)
             final_entitled = stored_entitled if stored_entitled > 0 else entitled
         else:
@@ -125,7 +128,6 @@ def request_list(request):
     if user.is_hr_or_admin:
         requests = LeaveRequest.objects.select_related('employee', 'leave_type').all()
     elif user.is_manager:
-        # Manager เห็นของตัวเองและลูกน้อง
         direct_report_users = user.get_direct_report_users()
         requests = LeaveRequest.objects.filter(
             Q(employee=user) | Q(employee__in=direct_report_users)
@@ -148,6 +150,28 @@ def request_list(request):
 
 @login_required
 def request_create(request):
+    year = timezone.now().year
+    balance_summary = _get_balance_summary(request.user, year)
+
+    # Build JSON dict: leave_type_id -> {remaining, entitled, used} for JS
+    balance_by_type = {
+        str(b['leave_type'].pk): {
+            'remaining': float(b['remaining_days']),
+            'entitled': float(b['entitled_days']),
+            'used': float(b['used_days']),
+            'name': b['leave_type'].name,
+        }
+        for b in balance_summary
+    }
+
+    # Find Leave Without Pay type
+    lwp_id = None
+    try:
+        lwp_type = LeaveType.objects.get(is_lwp=True)
+        lwp_id = lwp_type.pk
+    except (LeaveType.DoesNotExist, LeaveType.MultipleObjectsReturned):
+        pass
+
     form = LeaveRequestForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         req = form.save(commit=False)
@@ -155,7 +179,14 @@ def request_create(request):
         req.save()
         messages.success(request, 'ส่งคำขอลาเรียบร้อย รอการอนุมัติจากหัวหน้า')
         return redirect('leave_list')
-    return render(request, 'leave/request_form.html', {'form': form, 'title': 'ขอลา'})
+
+    return render(request, 'leave/request_form.html', {
+        'form': form,
+        'title': 'ขอลา',
+        'balance_by_type_json': json.dumps(balance_by_type),
+        'lwp_id': lwp_id,
+        'balance_summary': balance_summary,
+    })
 
 
 @login_required
@@ -169,7 +200,7 @@ def request_detail(request, pk):
             messages.error(request, 'ไม่มีสิทธิ์เข้าถึง')
             return redirect('leave_list')
 
-    # ตรวจสิทธิ์ approve (hr/admin หรือหัวหน้าตรงของพนักงานคนนั้น)
+    # ตรวจสิทธิ์ approve
     can_review = (
         req.status == 'pending'
         and (
@@ -189,34 +220,34 @@ def request_detail(request, pk):
             r.reviewed_at = timezone.now()
             r.save()
             if r.status == 'approved':
-                bal, _ = LeaveBalance.objects.get_or_create(
-                    employee=r.employee, leave_type=r.leave_type,
-                    year=r.start_date.year,
-                    defaults={'entitled_days': r.leave_type.days_per_year or r.leave_type.default_days}
-                )
-                bal.used_days += r.days
-                bal.save()
+                # อัปเดต LeaveBalance เฉพาะถ้าไม่ใช่ LWP
+                if not r.leave_type.is_lwp:
+                    bal, _ = LeaveBalance.objects.get_or_create(
+                        employee=r.employee, leave_type=r.leave_type,
+                        year=r.start_date.year,
+                        defaults={'entitled_days': r.leave_type.days_per_year or r.leave_type.default_days}
+                    )
+                    bal.used_days += r.days
+                    bal.save()
                 messages.success(request, 'อนุมัติคำขอลาเรียบร้อย')
             else:
                 messages.warning(request, 'ไม่อนุมัติคำขอลา')
             return redirect('leave_list')
 
-    # Leave balance ของพนักงานคนนั้น
+    # คำนวณ leave balance ของพนักงานคนนั้น (แม้ไม่มี stored record)
     year = req.start_date.year if req.start_date else timezone.now().year
-    try:
-        balance = LeaveBalance.objects.get(
-            employee=req.employee,
-            leave_type=req.leave_type,
-            year=year,
-        )
-    except LeaveBalance.DoesNotExist:
-        balance = None
+    balance_summary = _get_balance_summary(req.employee, year)
+    balance = next(
+        (b for b in balance_summary if b['leave_type'].pk == req.leave_type.pk),
+        None
+    )
 
     return render(request, 'leave/request_detail.html', {
         'req': req,
         'review_form': review_form,
         'can_review': can_review,
         'balance': balance,
+        'balance_summary': balance_summary,
     })
 
 
