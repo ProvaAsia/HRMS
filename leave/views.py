@@ -82,8 +82,10 @@ def _get_balance_summary(user, year):
         if lt.pk in existing:
             bal = existing[lt.pk]
             used = float(bal.used_days)
+            # ใช้ค่าที่คำนวณจาก accrual เสมอ เพื่อให้ปีทำงานสะท้อนอายุงานจริง
+            # ยกเว้นถ้า HR ตั้งค่าสูงกว่าที่คำนวณ (เช่น bonus วันลา) ให้ใช้ค่า HR
             stored_entitled = float(bal.entitled_days)
-            final_entitled = stored_entitled if stored_entitled > 0 else entitled
+            final_entitled = max(entitled, stored_entitled)
         else:
             used = 0.0
             final_entitled = entitled
