@@ -15,26 +15,36 @@
 {% endblock %}
 
 {% block content %}
-<!-- Leave Balances -->
+<!-- Leave Balance Cards with circular progress -->
 <div class="mb-6">
-  <h2 class="text-base font-semibold text-gray-700 mb-3">วันลาของฉัน — {{ year }}</h2>
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-sm font-semibold text-gray-600">วันลาของฉัน — {{ year }}</h2>
+  </div>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     {% for b in my_balances %}
-    <div class="card p-4">
-      <p class="text-xs text-gray-500 mb-1">{{ b.leave_type.name }}</p>
-      <div class="flex items-end gap-2 mb-1">
-        <p class="text-2xl font-bold text-gray-900">{{ b.remaining }}</p>
-        <p class="text-xs text-gray-400 mb-1">/ {{ b.entitled_days }} วัน</p>
+    {% with pct=b.used_days|default:0 total=b.entitled_days|default:1 %}
+    <div class="card p-5 flex flex-col items-center text-center">
+      <!-- Circular SVG progress -->
+      <div class="relative mb-3" style="width:72px;height:72px;">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="#E5E7EB" stroke-width="6"/>
+          <circle cx="36" cy="36" r="30" fill="none" stroke="#2563EB" stroke-width="6"
+            stroke-dasharray="{{ b.used_days|default:0|floatformat:0 }} 999"
+            stroke-dasharray="{% widthratio b.used_days b.entitled_days 188 %} 188"
+            stroke-linecap="round"
+            transform="rotate(-90 36 36)"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-lg font-bold text-gray-900 leading-none">{{ b.remaining }}</span>
+          <span class="text-xs text-gray-400 leading-none">left</span>
+        </div>
       </div>
-      <p class="text-xs text-gray-500">ใช้ไปแล้ว <span class="font-semibold text-orange-500">{{ b.used_days }}</span> วัน</p>
-      <div class="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        {% if b.entitled_days > 0 %}
-        <div class="h-1.5 bg-blue-500 rounded-full" style="width: {% widthratio b.used_days b.entitled_days 100 %}%"></div>
-        {% endif %}
-      </div>
+      <p class="text-sm font-semibold text-gray-900 mb-0.5">{{ b.leave_type.name }}</p>
+      <p class="text-xs text-gray-400">ใช้ <span class="font-medium text-orange-500">{{ b.used_days }}</span> / {{ b.entitled_days }} วัน</p>
     </div>
+    {% endwith %}
     {% empty %}
-    <div class="col-span-4 text-sm text-gray-400">ยังไม่มีวันลา กรุณาติดต่อ HR</div>
+    <div class="col-span-4 card p-6 text-center text-sm text-gray-400">ยังไม่มีวันลา กรุณาติดต่อ HR</div>
     {% endfor %}
   </div>
 </div>
@@ -42,16 +52,16 @@
 <!-- Recent Requests -->
 <div class="card overflow-hidden">
   <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-    <h2 class="font-semibold text-gray-900">คำขอล่าสุด</h2>
-    <a href="{% url 'leave_list' %}" class="text-sm text-blue-600 hover:underline">ดูทั้งหมด</a>
+    <h2 class="font-semibold text-gray-900 text-sm">คำขอล่าสุด</h2>
+    <a href="{% url 'leave_list' %}" class="text-xs text-blue-600 hover:underline">ดูทั้งหมด →</a>
   </div>
   <table class="w-full">
     <thead class="bg-gray-50">
       <tr>
         {% if user.can_approve %}<th class="table-header">พนักงาน</th>{% endif %}
-        <th class="table-header">ประเภทการลา</th>
+        <th class="table-header">ประเภท</th>
         <th class="table-header">วันที่</th>
-        <th class="table-header">จำนวนวัน</th>
+        <th class="table-header">จำนวน</th>
         <th class="table-header">สถานะ</th>
         <th class="table-header"></th>
       </tr>
@@ -61,17 +71,23 @@
       <tr class="hover:bg-gray-50">
         {% if user.can_approve %}<td class="table-cell font-medium">{{ r.employee.get_full_name }}</td>{% endif %}
         <td class="table-cell">{{ r.leave_type.name }}</td>
-        <td class="table-cell text-gray-500 text-xs">{{ r.start_date }} — {{ r.end_date }}</td>
-        <td class="table-cell font-medium">{{ r.days }}</td>
+        <td class="table-cell text-gray-500 text-xs">{{ r.start_date|date:"d M" }} — {{ r.end_date|date:"d M Y" }}</td>
+        <td class="table-cell font-medium">{{ r.days }} วัน</td>
         <td class="table-cell">
-          <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+          <span class="badge
+            {% if r.status == 'approved' %}bg-green-100 text-green-700
+            {% elif r.status == 'rejected' %}bg-red-100 text-red-700
+            {% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500
+            {% else %}bg-yellow-100 text-yellow-700{% endif %}">
             {{ r.get_status_display }}
           </span>
         </td>
-        <td class="table-cell"><a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a></td>
+        <td class="table-cell text-right">
+          <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a>
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="table-cell text-center text-gray-400 py-8">ยังไม่มีคำขอลา</td></tr>
+      <tr><td colspan="6" class="table-cell text-center text-gray-400 py-10">ยังไม่มีคำขอลา</td></tr>
       {% endfor %}
     </tbody>
   </table>

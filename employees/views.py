@@ -53,11 +53,11 @@ def employee_list(request):
         })
 
     elif user.is_manager:
-        # Manager เห็นเฉพาะลูกน้อง (read-only)
+        # Manager เห็นตัวเองและลูกน้อง (read-only)
         try:
             mgr_profile = user.employee_profile
             profiles = EmployeeProfile.objects.filter(
-                direct_manager=mgr_profile
+                Q(pk=mgr_profile.pk) | Q(direct_manager=mgr_profile)
             ).select_related('user', 'department', 'division')
         except EmployeeProfile.DoesNotExist:
             profiles = EmployeeProfile.objects.none()

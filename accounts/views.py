@@ -8,7 +8,6 @@ from django.utils.crypto import get_random_string
 from django.utils import timezone
 from .models import User
 from .forms import LoginForm, UserCreateForm, UserEditForm, InviteUserForm, SetPasswordForm
-from recruitment.models import JobPosition, Candidate
 from training.models import TrainingProgram, TrainingEnrollment
 from appraisals.models import AppraisalCycle, Appraisal
 from leave.models import LeaveRequest
@@ -36,10 +35,8 @@ def dashboard(request):
     today = timezone.localdate()
     context = {
         'total_employees': User.objects.filter(role='employee').count(),
-        'open_jobs': JobPosition.objects.filter(status='open').count(),
         'active_trainings': TrainingProgram.objects.filter(status__in=['upcoming', 'ongoing']).count(),
         'pending_appraisals': Appraisal.objects.filter(status__in=['pending', 'self_review', 'manager_review']).count(),
-        'recent_candidates': Candidate.objects.select_related('job_position').order_by('-applied_at')[:5],
         'upcoming_trainings': TrainingProgram.objects.filter(status='upcoming').order_by('start_date')[:5],
         'pending_leave': LeaveRequest.objects.filter(status='pending').count(),
         'pending_ot': OTRequest.objects.filter(status='pending').count(),

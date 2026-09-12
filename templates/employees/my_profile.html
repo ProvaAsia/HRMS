@@ -4,35 +4,57 @@
 
 {% block content %}
 {% if profile %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-5">
 
-  <!-- Card -->
-  <div class="card p-6 text-center">
-    {% if profile.photo %}
-    <img src="{{ profile.photo.url }}" class="w-24 h-24 rounded-full object-cover mx-auto mb-4">
-    {% else %}
-    <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-3xl font-bold mx-auto mb-4">
-      {{ user.initials }}
+  <!-- Profile Card -->
+  <div class="lg:col-span-1">
+    <div class="card p-6 text-center">
+      {% if profile.photo %}
+      <img src="{{ profile.photo.url }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4 ring-4 ring-white shadow">
+      {% else %}
+      <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold ring-4 ring-white shadow" style="background:#152057;color:#fff;">
+        {{ user.initials }}
+      </div>
+      {% endif %}
+      <h2 class="text-base font-bold text-gray-900 leading-snug">{{ profile.first_name_en }} {{ profile.last_name_en }}</h2>
+      {% if profile.first_name_th %}
+      <p class="text-sm text-gray-500 mt-0.5">{{ profile.first_name_th }} {{ profile.last_name_th }}</p>
+      {% endif %}
+      <p class="text-xs text-gray-400 mt-1">{{ profile.employee_id }}</p>
+      <p class="text-sm font-semibold text-blue-700 mt-2">{{ profile.job_title|default:"—" }}</p>
+      {% if profile.department %}
+      <p class="text-xs text-gray-400 mt-0.5">{{ profile.department.name }}</p>
+      {% endif %}
+      <div class="mt-3">
+        <span class="badge bg-green-50 text-green-700">{{ profile.get_employment_type_display }}</span>
+      </div>
+      <div class="mt-4 pt-4 border-t border-gray-100 space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-400">อายุงาน</span>
+          <span class="font-medium">{{ profile.years_of_service }} ปี</span>
+        </div>
+        {% if profile.join_date %}
+        <div class="flex justify-between">
+          <span class="text-gray-400">วันเริ่มงาน</span>
+          <span class="font-medium">{{ profile.join_date|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    {% endif %}
-    <h2 class="text-xl font-bold text-gray-900">{{ profile.first_name_en }} {{ profile.last_name_en }}</h2>
-    {% if profile.first_name_th %}<p class="text-gray-500 text-sm">{{ profile.first_name_th }} {{ profile.last_name_th }}</p>{% endif %}
-    <p class="text-xs text-gray-400 mt-1">{{ profile.employee_id }}</p>
-    <p class="mt-2 font-medium text-blue-700">{{ profile.job_title|default:"—" }}</p>
-    <span class="badge bg-green-50 text-green-700 mt-2">{{ profile.get_employment_type_display }}</span>
   </div>
 
-  <div class="lg:col-span-2 space-y-4">
+  <!-- Details -->
+  <div class="lg:col-span-3 space-y-4">
     <div class="card p-5">
-      <h3 class="font-semibold text-gray-700 mb-3">Work Information</h3>
-      <dl class="grid grid-cols-2 gap-3 text-sm">
-        <div><dt class="text-gray-400">Department</dt><dd class="font-medium">{{ profile.department.name|default:"—" }}</dd></div>
-        <div><dt class="text-gray-400">Division</dt><dd class="font-medium">{{ profile.division.name|default:"—" }}</dd></div>
-        <div><dt class="text-gray-400">Work Location</dt><dd class="font-medium">{{ profile.work_location.name|default:"—" }}</dd></div>
-        <div><dt class="text-gray-400">Join Date</dt><dd class="font-medium">{{ profile.join_date|default:"—" }}</dd></div>
-        <div><dt class="text-gray-400">Years of Service</dt><dd class="font-medium">{{ profile.years_of_service }}</dd></div>
-        <div><dt class="text-gray-400">Direct Manager</dt>
-          <dd class="font-medium">
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Work Information</h3>
+      <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+        <div><dt class="text-gray-400 text-xs mb-0.5">Department</dt><dd class="font-medium text-gray-900">{{ profile.department.name|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Division</dt><dd class="font-medium text-gray-900">{{ profile.division.name|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Work Location</dt><dd class="font-medium text-gray-900">{{ profile.work_location.name|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Join Date</dt><dd class="font-medium text-gray-900">{{ profile.join_date|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Years of Service</dt><dd class="font-medium text-gray-900">{{ profile.years_of_service }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Direct Manager</dt>
+          <dd class="font-medium text-gray-900">
             {% if profile.direct_manager %}{{ profile.direct_manager.full_name_en }}{% else %}—{% endif %}
           </dd>
         </div>
@@ -40,33 +62,42 @@
     </div>
 
     <div class="card p-5">
-      <h3 class="font-semibold text-gray-700 mb-3">Contact</h3>
-      <dl class="grid grid-cols-2 gap-3 text-sm">
-        <div><dt class="text-gray-400">Company Email</dt><dd class="font-medium">{{ profile.company_email|default:"—" }}</dd></div>
-        <div><dt class="text-gray-400">Phone</dt><dd class="font-medium">{{ profile.phone|default:"—" }}</dd></div>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Contact</h3>
+      <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+        <div><dt class="text-gray-400 text-xs mb-0.5">Company Email</dt><dd class="font-medium text-gray-900">{{ profile.company_email|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Personal Email</dt><dd class="font-medium text-gray-900">{{ profile.personal_email|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs mb-0.5">Phone</dt><dd class="font-medium text-gray-900">{{ profile.phone|default:"—" }}</dd></div>
       </dl>
     </div>
 
     {% if profile.emergency_contacts.exists %}
     <div class="card p-5">
-      <h3 class="font-semibold text-gray-700 mb-3">Emergency Contacts</h3>
-      {% for ec in profile.emergency_contacts.all %}
-      <div class="flex justify-between text-sm py-2 border-b border-gray-50 last:border-0">
-        <span class="font-medium">{{ ec.name }}</span>
-        <span class="text-gray-500">{{ ec.relationship }}</span>
-        <span>{{ ec.phone }}</span>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Emergency Contacts</h3>
+      <div class="space-y-2">
+        {% for ec in profile.emergency_contacts.all %}
+        <div class="flex items-center gap-4 text-sm py-2 border-b border-gray-50 last:border-0">
+          <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold flex-shrink-0">{{ ec.name.0 }}</div>
+          <div class="flex-1">
+            <p class="font-medium text-gray-900">{{ ec.name }}</p>
+            <p class="text-xs text-gray-400">{{ ec.relationship }}</p>
+          </div>
+          <span class="text-gray-600">{{ ec.phone }}</span>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
     {% endif %}
   </div>
 </div>
+
 {% else %}
 <div class="card p-12 text-center">
-  <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-  </svg>
-  <p class="text-gray-500">No employee profile found for your account.</p>
+  <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+    <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+  </div>
+  <p class="text-gray-500 font-medium">No employee profile found</p>
   <p class="text-sm text-gray-400 mt-1">Please contact HR to set up your profile.</p>
 </div>
 {% endif %}
