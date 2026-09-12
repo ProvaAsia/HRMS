@@ -83,6 +83,9 @@ def dashboard(request):
                     date__year=today.year, date__month=today.month
                 )
             }
+            context['holidays_year'] = list(
+                CompanyHoliday.objects.filter(date__year=today.year).order_by('date')
+            )
             days_data = []
             for day in range(1, num_days + 1):
                 d = date_cls(today.year, today.month, day)
