@@ -139,6 +139,93 @@
     </div>
   </div>
 
+  <!-- Team Attendance Today -->
+  {% if team_attendance_depts %}
+  <div class="card p-5 mb-4">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-900"
+          data-th="การมาทำงานวันนี้" data-en="Today's Attendance">การมาทำงานวันนี้</h3>
+      <span class="text-xs text-gray-400">{{ calendar_month|date:"d M Y" }}</span>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="rounded-xl p-3 text-center" style="background:#F0FDF4;">
+        <p class="text-2xl font-bold text-green-700">{{ team_attendance_summary.present }}</p>
+        <p class="text-xs text-gray-500 mt-0.5" data-th="มาทำงาน" data-en="Present">มาทำงาน</p>
+      </div>
+      <div class="rounded-xl p-3 text-center" style="background:#FFF7ED;">
+        <p class="text-2xl font-bold text-orange-500">{{ team_attendance_summary.on_leave }}</p>
+        <p class="text-xs text-gray-500 mt-0.5" data-th="ลา" data-en="On Leave">ลา</p>
+      </div>
+      <div class="rounded-xl p-3 text-center" style="background:#FEF2F2;">
+        <p class="text-2xl font-bold text-red-600">{{ team_attendance_summary.absent }}</p>
+        <p class="text-xs text-gray-500 mt-0.5" data-th="ขาด/ไม่มีข้อมูล" data-en="Absent/No data">ขาด/ไม่มีข้อมูล</p>
+      </div>
+    </div>
+
+    <!-- Per-department breakdown -->
+    {% for dept, data in team_attendance_depts.items %}
+    <div class="{% if not forloop.last %}mb-4 pb-4 border-b border-gray-100{% endif %}">
+      <!-- Dept header -->
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full inline-block" style="background:#152057;"></span>
+          <span class="text-xs font-semibold text-gray-700">{{ dept }}</span>
+        </div>
+        <span class="text-xs text-gray-400">
+          <span class="font-semibold text-green-700">{{ data.present }}</span>/<span>{{ data.total }}</span>
+          <span data-th="คน" data-en="ppl">คน</span>
+        </span>
+      </div>
+
+      <!-- Progress bar -->
+      {% if data.total > 0 %}
+      <div class="h-1.5 rounded-full mb-3" style="background:#E5E7EB;">
+        <div class="h-1.5 rounded-full transition-all"
+             style="width:{% widthratio data.present data.total 100 %}%;background:{% if data.present == data.total %}#16A34A{% elif data.present == 0 %}#DC2626{% else %}#2563EB{% endif %};"></div>
+      </div>
+      {% endif %}
+
+      <!-- Member chips -->
+      <div class="flex flex-wrap gap-1.5">
+        {% for m in data.members %}
+        <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border"
+             style="
+               {% if m.status == 'present' %}background:#F0FDF4;border-color:#BBF7D0;{% elif m.status == 'leave' %}background:#FFF7ED;border-color:#FED7AA;{% else %}background:#FEF2F2;border-color:#FECACA;{% endif %}
+             ">
+          <!-- Avatar -->
+          <div class="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+               style="font-size:9px;background:{% if m.status == 'present' %}#16A34A{% elif m.status == 'leave' %}#EA580C{% else %}#DC2626{% endif %};">
+            {{ m.emp.first_name.0 }}
+          </div>
+          <span class="font-medium {% if m.status == 'present' %}text-green-800{% elif m.status == 'leave' %}text-orange-800{% else %}text-red-700{% endif %}">
+            {{ m.emp.get_full_name }}
+          </span>
+          <!-- Status badge -->
+          <span class="{% if m.status == 'present' %}text-green-600{% elif m.status == 'leave' %}text-orange-600{% else %}text-red-500{% endif %}" style="font-size:10px;">
+            {% if m.status == 'present' %}
+              {% if m.record.status == 'late' %}<span data-th="สาย" data-en="Late">สาย</span>
+              {% elif m.record.status == 'wfh' %}<span data-th="WFH" data-en="WFH">WFH</span>
+              {% elif m.record.status == 'half_day' %}<span data-th="ครึ่งวัน" data-en="½ Day">ครึ่งวัน</span>
+              {% else %}<span data-th="✓" data-en="✓">✓</span>
+              {% endif %}
+            {% elif m.status == 'leave' %}
+              <span data-th="ลา" data-en="Leave">ลา</span>
+            {% elif m.status == 'no_record' %}
+              <span data-th="ไม่มีข้อมูล" data-en="No data">—</span>
+            {% else %}
+              <span data-th="ขาด" data-en="Absent">ขาด</span>
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <!-- Monthly Leave Calendar -->
   {% if calendar_days %}
   <div class="card p-5">

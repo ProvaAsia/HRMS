@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils.crypto import get_random_string
+from collections import defaultdict
 import calendar
 
 from django.utils import timezone
@@ -96,6 +97,55 @@ def dashboard(request):
             context['calendar_days'] = days_data
             context['calendar_empty_prefix'] = empty_prefix
             context['calendar_month'] = today
+
+            # Team attendance today — grouped by department
+            PRESENT_STATUSES = {'present', 'late', 'wfh', 'half_day'}
+            today_records = AttendanceRecord.objects.filter(
+                employee__in=direct_reports, date=today
+            ).select_related('employee')
+            records_by_emp = {r.employee_id: r for r in today_records}
+
+            dept_data = defaultdict(lambda: {
+                'total': 0, 'present': 0, 'on_leave': 0, 'absent': 0, 'members': []
+            })
+
+            for emp in direct_reports.order_by('department', 'first_name'):
+                dept = emp.department.strip() if emp.department else 'ไม่ระบุแผนก'
+                record = records_by_emp.get(emp.pk)
+                dept_data[dept]['total'] += 1
+
+                if record:
+                    if record.status in PRESENT_STATUSES:
+                        member_status = 'present'
+                        dept_data[dept]['present'] += 1
+                    elif record.status == 'leave':
+                        member_status = 'leave'
+                        dept_data[dept]['on_leave'] += 1
+                    else:
+                        member_status = 'absent'
+                        dept_data[dept]['absent'] += 1
+                else:
+                    # No record yet — treat as no data (absent bucket for summary)
+                    member_status = 'no_record'
+                    dept_data[dept]['absent'] += 1
+
+                dept_data[dept]['members'].append({
+                    'emp': emp,
+                    'status': member_status,
+                    'record': record,
+                })
+
+            dept_dict = dict(dept_data)
+            total_present = sum(d['present'] for d in dept_dict.values())
+            total_leave = sum(d['on_leave'] for d in dept_dict.values())
+            total_absent = sum(d['absent'] for d in dept_dict.values())
+            context['team_attendance_depts'] = dept_dict
+            context['team_attendance_summary'] = {
+                'total': direct_reports.count(),
+                'present': total_present,
+                'on_leave': total_leave,
+                'absent': total_absent,
+            }
 
     return render(request, 'dashboard.html', context)
 
