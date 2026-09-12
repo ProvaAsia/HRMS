@@ -87,9 +87,16 @@ def employee_detail(request, pk):
     if user.is_hr_or_admin:
         can_edit = True
     elif user.is_manager:
-        if profile.user == user or user.is_manager_of(profile.user):
-            can_edit = False
-        else:
+        # อนุญาต: ดูโปรไฟล์ตัวเอง หรือ direct report (เช็คผ่าน EmployeeProfile.direct_manager)
+        try:
+            mgr_profile = user.employee_profile
+            is_own = (profile == mgr_profile)
+            is_direct_report = (profile.direct_manager_id == mgr_profile.pk)
+        except EmployeeProfile.DoesNotExist:
+            is_own = False
+            is_direct_report = False
+
+        if not (is_own or is_direct_report):
             messages.error(request, 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้')
             return redirect('dashboard')
         can_edit = False
