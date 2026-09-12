@@ -57,6 +57,7 @@
   <a href="?tab=department"   class="tab-link {% if tab == 'department' %}active{% endif %}">Department ({{ departments|length }})</a>
   <a href="?tab=costcenter"   class="tab-link {% if tab == 'costcenter' %}active{% endif %}">Cost Center ({{ cost_centers|length }})</a>
   <a href="?tab=worklocation" class="tab-link {% if tab == 'worklocation' %}active{% endif %}">Work Location ({{ work_locations|length }})</a>
+  <a href="?tab=holiday"      class="tab-link {% if tab == 'holiday' %}active{% endif %}">🎌 วันหยุดนักขัตฤกษ์ ({{ holidays|length }})</a>
 </div>
 
 <!-- ══ DIVISION ══════════════════════════════════════════════ -->
@@ -271,6 +272,83 @@
   </table>
   {% else %}
   <div class="empty-state">No work locations yet — add the first one above.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+<!-- ══ COMPANY HOLIDAYS ══════════════════════════════════════ -->
+{% if tab == 'holiday' %}
+<div class="card p-6">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <h3 style="font-size:15px;font-weight:600;color:#111827;">เพิ่มวันหยุดนักขัตฤกษ์</h3>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="{% url 'holiday_excel_template' %}" class="btn-secondary" style="font-size:13px;">⬇ Download Template</a>
+      <form method="post" action="{% url 'holiday_excel_upload' %}" enctype="multipart/form-data" style="display:inline-flex;">
+        {% csrf_token %}
+        <label class="btn-primary" style="cursor:pointer;font-size:13px;">
+          ⬆ Upload Excel
+          <input type="file" name="excel_file" accept=".xlsx" onchange="this.form.submit()" style="display:none;">
+        </label>
+      </form>
+    </div>
+  </div>
+
+  <form method="post" action="{% url 'holiday_create' %}" class="inline-form" style="margin-bottom:24px;">
+    {% csrf_token %}
+    <div class="inline-form-field">
+      <label>วันที่ *</label>
+      <input type="date" name="date" required>
+    </div>
+    <div class="inline-form-field">
+      <label>ชื่อวันหยุด (TH) *</label>
+      <input name="name" placeholder="เช่น วันสงกรานต์" required style="min-width:220px;">
+    </div>
+    <div class="inline-form-field">
+      <label>ชื่อวันหยุด (EN)</label>
+      <input name="name_en" placeholder="e.g. Songkran Festival" style="min-width:220px;">
+    </div>
+    <button type="submit" class="btn-primary" style="padding:8px 18px;align-self:flex-end;">+ Add</button>
+  </form>
+
+  <!-- Year filter -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    {% for y in holiday_years %}
+    <a href="?tab=holiday&holiday_year={{ y }}" style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;text-decoration:none;
+      {% if y == holiday_year %}background:#152057;color:#fff;{% else %}background:#F3F4F6;color:#374151;{% endif %}">{{ y }}</a>
+    {% endfor %}
+  </div>
+
+  {% if holidays %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>วันที่</th>
+        <th>วันในสัปดาห์</th>
+        <th>ชื่อ (TH)</th>
+        <th>ชื่อ (EN)</th>
+        <th style="width:80px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in holidays %}
+      <tr>
+        <td style="font-weight:600;font-family:monospace;">{{ h.date|date:"d M Y" }}</td>
+        <td style="color:#6B7280;">{{ h.date|date:"l" }}</td>
+        <td style="font-weight:500;">{{ h.name }}</td>
+        <td style="color:#6B7280;">{{ h.name_en|default:"—" }}</td>
+        <td>
+          <form method="post" action="{% url 'holiday_delete' h.pk %}" onsubmit="return confirm('ลบวันหยุดนี้?');">
+            {% csrf_token %}
+            <button type="submit" class="action-btn action-delete">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">ยังไม่มีวันหยุดในปี {{ holiday_year }} — เพิ่มด้านบนหรือ Upload Excel</div>
   {% endif %}
 </div>
 {% endif %}

@@ -77,6 +77,12 @@ def dashboard(request):
             # Build calendar days list
             num_days = month_end.day
             from datetime import date as date_cls
+            from attendance.models import CompanyHoliday
+            holidays_this_month = {
+                h.date: h for h in CompanyHoliday.objects.filter(
+                    date__year=today.year, date__month=today.month
+                )
+            }
             days_data = []
             for day in range(1, num_days + 1):
                 d = date_cls(today.year, today.month, day)
@@ -84,12 +90,14 @@ def dashboard(request):
                 for lr in approved_leaves:
                     if lr.start_date <= d <= lr.end_date:
                         on_leave.append(lr)
+                holiday = holidays_this_month.get(d)
                 days_data.append({
                     'date': d,
                     'weekday': d.weekday(),  # 0=Mon,6=Sun
                     'is_today': d == today,
                     'on_leave': on_leave,
                     'on_leave_extra': max(0, len(on_leave) - 2),
+                    'holiday': holiday,
                 })
             # Pad the start of the grid (Monday = 0)
             first_offset = month_start.weekday()

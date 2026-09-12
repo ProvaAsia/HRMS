@@ -30,4 +30,9 @@ urlpatterns = [
     path('masterdata/worklocation/create/', views_masterdata.worklocation_create, name='worklocation_create'),
     path('masterdata/worklocation/<int:pk>/edit/', views_masterdata.worklocation_edit, name='worklocation_edit'),
     path('masterdata/worklocation/<int:pk>/delete/', views_masterdata.worklocation_delete, name='worklocation_delete'),
+
+    path('masterdata/holiday/create/', views_masterdata.holiday_create, name='holiday_create'),
+    path('masterdata/holiday/<int:pk>/delete/', views_masterdata.holiday_delete, name='holiday_delete'),
+    path('masterdata/holiday/excel-template/', views_masterdata.holiday_excel_template, name='holiday_excel_template'),
+    path('masterdata/holiday/excel-upload/', views_masterdata.holiday_excel_upload, name='holiday_excel_upload'),
 ]

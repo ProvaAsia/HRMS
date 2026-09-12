@@ -247,8 +247,11 @@
         {% for _ in calendar_empty_prefix %}<div></div>{% endfor %}
         <!-- Day cells -->
         {% for day in calendar_days %}
-        <div style="border-radius:8px;padding:4px 3px;min-height:54px;border:1.5px solid {% if day.is_today %}#2563EB{% else %}#F3F4F6{% endif %};background:{% if day.is_today %}#EFF6FF{% elif day.weekday >= 5 %}#FEF2F2{% else %}#fff{% endif %};">
-          <div style="font-size:11px;font-weight:{% if day.is_today %}700{% else %}500{% endif %};color:{% if day.is_today %}#2563EB{% elif day.weekday >= 5 %}#DC2626{% else %}#374151{% endif %};text-align:center;margin-bottom:2px;">{{ day.date.day }}</div>
+        <div style="border-radius:8px;padding:4px 3px;min-height:54px;border:1.5px solid {% if day.is_today %}#2563EB{% elif day.holiday %}#D97706{% else %}#F3F4F6{% endif %};background:{% if day.is_today %}#EFF6FF{% elif day.holiday %}#FFFBEB{% elif day.weekday >= 5 %}#FEF2F2{% else %}#fff{% endif %};">
+          <div style="font-size:11px;font-weight:{% if day.is_today %}700{% else %}500{% endif %};color:{% if day.is_today %}#2563EB{% elif day.holiday %}#B45309{% elif day.weekday >= 5 %}#DC2626{% else %}#374151{% endif %};text-align:center;margin-bottom:2px;">{{ day.date.day }}</div>
+          {% if day.holiday %}
+          <div style="background:#FDE68A;border-radius:3px;padding:1px 3px;font-size:9px;color:#78350F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;" title="{{ day.holiday.name }}">🎌 {{ day.holiday.name }}</div>
+          {% endif %}
           {% for lr in day.on_leave|slice:":2" %}
           <div style="background:#FEF3C7;border-radius:3px;padding:1px 3px;font-size:9px;color:#92400E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;" title="{{ lr.employee.get_full_name }} — {{ lr.leave_type }}">{{ lr.employee.first_name }}</div>
           {% endfor %}

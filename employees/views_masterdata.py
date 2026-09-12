@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 
 from .models import Division, Department, CostCenter, WorkLocation
+from attendance.models import CompanyHoliday
 
 
 def _require_super_admin(user):
@@ -21,12 +22,32 @@ def masterdata_overview(request):
         return redirect('dashboard')
 
     tab = request.GET.get('tab', 'division')
+
+    # Holiday year filter
+    from datetime import date as date_cls
+    current_year = date_cls.today().year
+    try:
+        holiday_year = int(request.GET.get('holiday_year', current_year))
+    except (ValueError, TypeError):
+        holiday_year = current_year
+
+    all_holiday_years = (
+        CompanyHoliday.objects
+        .values_list('date__year', flat=True)
+        .distinct()
+        .order_by('date__year')
+    )
+    holiday_years = sorted(set(list(all_holiday_years) + [current_year]))
+
     context = {
         'tab': tab,
         'divisions': Division.objects.all().order_by('code'),
         'departments': Department.objects.select_related('division').order_by('code'),
         'cost_centers': CostCenter.objects.all().order_by('code'),
         'work_locations': WorkLocation.objects.all().order_by('name'),
+        'holidays': CompanyHoliday.objects.filter(date__year=holiday_year).order_by('date'),
+        'holiday_year': holiday_year,
+        'holiday_years': holiday_years,
     }
     return render(request, 'employees/masterdata/overview.html', context)
 
@@ -390,3 +411,141 @@ def masterdata_excel_upload(request):
             messages.error(request, e)
 
     return redirect('masterdata_overview')
+
+
+# ─── Company Holiday ─────────────────────────────────────────
+@login_required
+def holiday_create(request):
+    if not _require_super_admin(request.user):
+        return redirect('dashboard')
+    if request.method == 'POST':
+        from datetime import date as date_cls
+        date_str = request.POST.get('date', '').strip()
+        name = request.POST.get('name', '').strip()
+        name_en = request.POST.get('name_en', '').strip()
+        if not date_str or not name:
+            messages.error(request, 'กรุณากรอกวันที่และชื่อวันหยุด')
+        else:
+            try:
+                from datetime import datetime
+                d = datetime.strptime(date_str, '%Y-%m-%d').date()
+                obj, created = CompanyHoliday.objects.update_or_create(
+                    date=d, defaults={'name': name, 'name_en': name_en}
+                )
+                if created:
+                    messages.success(request, f'เพิ่มวันหยุด "{name}" เรียบร้อย')
+                else:
+                    messages.success(request, f'อัปเดตวันหยุด "{name}" เรียบร้อย')
+            except ValueError:
+                messages.error(request, 'รูปแบบวันที่ไม่ถูกต้อง')
+    year = request.POST.get('date', '')[:4] or ''
+    redirect_url = f'/employees/masterdata/?tab=holiday&holiday_year={year}' if year else '/employees/masterdata/?tab=holiday'
+    return redirect(redirect_url)
+
+
+@login_required
+def holiday_delete(request, pk):
+    if not _require_super_admin(request.user):
+        return redirect('dashboard')
+    obj = get_object_or_404(CompanyHoliday, pk=pk)
+    year = obj.date.year
+    if request.method == 'POST':
+        obj.delete()
+        messages.success(request, 'ลบวันหยุดเรียบร้อย')
+    return redirect(f'/employees/masterdata/?tab=holiday&holiday_year={year}')
+
+
+@login_required
+def holiday_excel_template(request):
+    if not _require_super_admin(request.user):
+        return redirect('dashboard')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Holidays'
+
+    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill(fill_type='solid', fgColor='152057')
+    headers = ['date', 'name', 'name_en']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = 22
+
+    # Example rows
+    examples = [
+        ['2026-01-01', 'วันขึ้นปีใหม่', "New Year's Day"],
+        ['2026-04-13', 'วันสงกรานต์', 'Songkran Festival'],
+        ['2026-05-01', 'วันแรงงานแห่งชาติ', 'Labour Day'],
+        ['2026-12-31', 'วันสิ้นปี', "New Year's Eve"],
+    ]
+    for r_idx, row in enumerate(examples, 2):
+        for c_idx, val in enumerate(row, 1):
+            ws.cell(row=r_idx, column=c_idx, value=val)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="holiday_template.xlsx"'
+    return response
+
+
+@login_required
+def holiday_excel_upload(request):
+    if not _require_super_admin(request.user):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('masterdata_overview')
+
+    file = request.FILES.get('excel_file')
+    if not file:
+        messages.error(request, 'กรุณาเลือกไฟล์ Excel')
+        return redirect('/employees/masterdata/?tab=holiday')
+
+    try:
+        wb = openpyxl.load_workbook(file, data_only=True)
+    except Exception:
+        messages.error(request, 'ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ .xlsx')
+        return redirect('/employees/masterdata/?tab=holiday')
+
+    ws = wb.active
+    added = updated = skipped = 0
+    from datetime import datetime, date as date_cls
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or not row[0]:
+            continue
+        raw_date = row[0]
+        name = str(row[1]).strip() if row[1] else ''
+        name_en = str(row[2]).strip() if len(row) > 2 and row[2] else ''
+        if not name:
+            skipped += 1
+            continue
+        # Parse date: support datetime obj (from Excel) or string
+        if isinstance(raw_date, (datetime, date_cls)):
+            d = raw_date.date() if isinstance(raw_date, datetime) else raw_date
+        else:
+            try:
+                d = datetime.strptime(str(raw_date).strip(), '%Y-%m-%d').date()
+            except ValueError:
+                skipped += 1
+                continue
+        obj, created = CompanyHoliday.objects.update_or_create(
+            date=d, defaults={'name': name, 'name_en': name_en}
+        )
+        if created:
+            added += 1
+        else:
+            updated += 1
+
+    msg = f'นำเข้าวันหยุด: เพิ่ม {added}, อัปเดต {updated}'
+    if skipped:
+        msg += f', ข้ามแถว {skipped}'
+    messages.success(request, msg)
+    return redirect('/employees/masterdata/?tab=holiday')
