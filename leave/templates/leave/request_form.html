@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ title }}{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+{% block page_title %}<span data-th="ขอลา" data-en="Request Leave">{{ title }}</span>{% endblock %}
 
 {% block content %}
 <div class="max-w-xl space-y-4">
@@ -8,14 +8,14 @@
   <!-- Balance Summary mini bar -->
   {% if balance_summary %}
   <div class="card p-4">
-    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">วันลาคงเหลือของคุณ</p>
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3" data-th="วันลาคงเหลือของคุณ" data-en="Your Remaining Leave">วันลาคงเหลือของคุณ</p>
     <div class="flex flex-wrap gap-3">
       {% for b in balance_summary %}
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
            style="background:#F0F2F8;color:#374151;">
         <span>{{ b.leave_type.name }}</span>
         <span class="font-bold {% if b.remaining_days == 0 %}text-red-600{% elif b.remaining_days <= 3 %}text-orange-500{% else %}text-blue-700{% endif %}">
-          {{ b.remaining_days|floatformat:0 }} วัน
+          {{ b.remaining_days|floatformat:0 }} <span data-th="วัน" data-en="d">วัน</span>
         </span>
       </div>
       {% endfor %}
@@ -30,7 +30,7 @@
 
       <!-- Leave Type -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทการลา</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-th="ประเภทการลา" data-en="Leave Type">ประเภทการลา</label>
         {{ form.leave_type }}
 
         <!-- Balance indicator (updated by JS) -->
@@ -48,40 +48,40 @@
             <span id="balance-low-text" class="text-orange-700"></span>
           </div>
           <div id="balance-empty" class="hidden rounded-lg p-3 mt-1" style="background:#FEF2F2;border:1px solid #FECACA;">
-            <p class="text-sm font-semibold text-red-700 mb-0.5">⚠ วันลาประเภทนี้หมดแล้ว</p>
+            <p class="text-sm font-semibold text-red-700 mb-0.5" id="balance-empty-title">⚠ วันลาประเภทนี้หมดแล้ว</p>
             <p class="text-xs text-red-600" id="balance-lwp-notice">ระบบเปลี่ยนเป็น <strong>ลาไม่รับค่าจ้าง (Leave Without Pay)</strong> ให้อัตโนมัติ</p>
           </div>
         </div>
 
         <!-- LWP notice (shown when LWP is selected) -->
         <div id="lwp-notice" class="hidden mt-2 rounded-lg p-3" style="background:#FFF7ED;border:1px solid #FED7AA;">
-          <p class="text-sm font-medium text-orange-800">📋 ลาไม่รับค่าจ้าง</p>
-          <p class="text-xs text-orange-700 mt-0.5">วันลานี้ไม่นับค่าจ้าง กรุณาแนบเหตุผลให้ชัดเจน</p>
+          <p class="text-sm font-medium text-orange-800" id="lwp-title">📋 ลาไม่รับค่าจ้าง</p>
+          <p class="text-xs text-orange-700 mt-0.5" id="lwp-subtitle">วันลานี้ไม่นับค่าจ้าง กรุณาแนบเหตุผลให้ชัดเจน</p>
         </div>
       </div>
 
       <!-- Dates -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">วันเริ่มต้น</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1" data-th="วันเริ่มต้น" data-en="Start Date">วันเริ่มต้น</label>
           {{ form.start_date }}
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">วันสิ้นสุด</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1" data-th="วันสิ้นสุด" data-en="End Date">วันสิ้นสุด</label>
           {{ form.end_date }}
         </div>
       </div>
 
       <!-- Days -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนวันทำงาน</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-th="จำนวนวันทำงาน" data-en="Working Days">จำนวนวันทำงาน</label>
         {{ form.days }}
-        <p class="text-xs text-gray-400 mt-1">นับเฉพาะวันทำงาน ไม่รวมวันหยุดและเสาร์-อาทิตย์</p>
+        <p class="text-xs text-gray-400 mt-1" data-th="นับเฉพาะวันทำงาน ไม่รวมวันหยุดและเสาร์-อาทิตย์" data-en="Weekdays only, excluding public holidays and weekends">นับเฉพาะวันทำงาน ไม่รวมวันหยุดและเสาร์-อาทิตย์</p>
       </div>
 
       <!-- Reason -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">เหตุผล</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-th="เหตุผล" data-en="Reason">เหตุผล</label>
         {{ form.reason }}
       </div>
 
@@ -94,8 +94,8 @@
       {% endif %}
 
       <div class="flex gap-3 pt-1">
-        <button type="submit" class="btn-primary">ส่งคำขอ</button>
-        <a href="{% url 'leave_list' %}" class="btn-secondary">ยกเลิก</a>
+        <button type="submit" class="btn-primary" data-th="ส่งคำขอ" data-en="Submit Request">ส่งคำขอ</button>
+        <a href="{% url 'leave_list' %}" class="btn-secondary" data-th="ยกเลิก" data-en="Cancel">ยกเลิก</a>
       </div>
     </form>
   </div>
@@ -115,9 +115,36 @@
   const balLowText = document.getElementById('balance-low-text');
   const lwpNotice = document.getElementById('lwp-notice');
 
+  // Translation strings — updated by lang engine via data attributes on elements
+  // For dynamic JS strings, read from current lang setting
+  function getLang() {
+    return localStorage.getItem('hrms_lang') || 'th';
+  }
+
+  const T = {
+    th: {
+      balanceNormal: (rem, used, ent) => `คงเหลือ ${rem} วัน (ใช้ไป ${used} / สิทธิ์ ${ent} วัน)`,
+      balanceLow:    (rem, used, ent) => `คงเหลือ ${rem} วัน (ใช้ไป ${used} / สิทธิ์ ${ent} วัน) — ใกล้หมดแล้ว`,
+      emptyTitle: '⚠ วันลาประเภทนี้หมดแล้ว',
+      emptyNotice: (name) => `ระบบเปลี่ยนเป็น <strong>ลาไม่รับค่าจ้าง (Leave Without Pay)</strong> ให้อัตโนมัติ`,
+      lwpTitle: '📋 ลาไม่รับค่าจ้าง',
+      lwpSubtitle: 'วันลานี้ไม่นับค่าจ้าง กรุณาแนบเหตุผลให้ชัดเจน',
+    },
+    en: {
+      balanceNormal: (rem, used, ent) => `${rem} days remaining (used ${used} / entitled ${ent} days)`,
+      balanceLow:    (rem, used, ent) => `${rem} days remaining (used ${used} / entitled ${ent}) — running low`,
+      emptyTitle: '⚠ No balance left for this leave type',
+      emptyNotice: (name) => `Automatically switched to <strong>Leave Without Pay</strong>`,
+      lwpTitle: '📋 Leave Without Pay',
+      lwpSubtitle: 'This leave type is unpaid. Please provide a clear reason.',
+    }
+  };
+
   function updateIndicator() {
     if (!sel) return;
     const typeId = sel.value;
+    const l = getLang();
+    const t = T[l] || T.th;
 
     // Reset
     indicator.classList.add('hidden');
@@ -128,6 +155,8 @@
 
     // Show LWP notice when LWP is selected
     if (lwpId && String(typeId) === String(lwpId)) {
+      document.getElementById('lwp-title').textContent = t.lwpTitle;
+      document.getElementById('lwp-subtitle').textContent = t.lwpSubtitle;
       lwpNotice.classList.remove('hidden');
       return;
     }
@@ -138,29 +167,36 @@
     indicator.classList.remove('hidden');
 
     if (bal.remaining <= 0) {
-      // No balance — auto-switch to LWP
+      document.getElementById('balance-empty-title').textContent = t.emptyTitle;
+      document.getElementById('balance-lwp-notice').innerHTML = t.emptyNotice(bal.name);
       emptyDiv.classList.remove('hidden');
       if (lwpId) {
         sel.value = String(lwpId);
+        document.getElementById('lwp-title').textContent = t.lwpTitle;
+        document.getElementById('lwp-subtitle').textContent = t.lwpSubtitle;
         lwpNotice.classList.remove('hidden');
         indicator.classList.add('hidden');
       }
     } else if (bal.remaining <= 3) {
       lowDiv.classList.remove('hidden');
-      balLowText.textContent =
-        `คงเหลือ ${bal.remaining} วัน (ใช้ไป ${bal.used} / สิทธิ์ ${bal.entitled} วัน) — ใกล้หมดแล้ว`;
+      balLowText.textContent = t.balanceLow(bal.remaining, bal.used, bal.entitled);
     } else {
       normalDiv.classList.remove('hidden');
-      balText.textContent =
-        `คงเหลือ ${bal.remaining} วัน (ใช้ไป ${bal.used} / สิทธิ์ ${bal.entitled} วัน)`;
+      balText.textContent = t.balanceNormal(bal.remaining, bal.used, bal.entitled);
     }
   }
 
   if (sel) {
     sel.addEventListener('change', updateIndicator);
-    // Run on load in case there's a pre-selected value
     updateIndicator();
   }
+
+  // Re-run when language is switched
+  var origSetLang = window.setLang;
+  window.setLang = function(l) {
+    if (origSetLang) origSetLang(l);
+    updateIndicator();
+  };
 })();
 </script>
 {% endblock %}

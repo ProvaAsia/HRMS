@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}คำขอลา{% endblock %}
-{% block page_title %}Leave Requests{% endblock %}
+{% block page_title %}<span data-th="คำขอลา" data-en="Leave Requests">คำขอลา</span>{% endblock %}
 {% block top_actions %}
   <a href="{% url 'leave_create' %}" class="btn-primary">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-    + Request Leave
+    <span data-th="ขอลา" data-en="Request Leave">+ ขอลา</span>
   </a>
 {% endblock %}
 
@@ -13,8 +13,9 @@
 <!-- Filter -->
 <div class="flex flex-wrap gap-2 mb-5">
   <a href="?"
-     class="px-3 py-1.5 rounded-full text-xs font-medium transition {% if not status_filter %}bg-blue-600 text-white{% else %}bg-white text-gray-600 hover:bg-gray-100 border border-gray-200{% endif %}">
-    All
+     class="px-3 py-1.5 rounded-full text-xs font-medium transition {% if not status_filter %}bg-blue-600 text-white{% else %}bg-white text-gray-600 hover:bg-gray-100 border border-gray-200{% endif %}"
+     data-th="ทั้งหมด" data-en="All">
+    ทั้งหมด
   </a>
   {% for val, label in status_choices %}
   <a href="?status={{ val }}"
@@ -26,16 +27,16 @@
 
 <!-- ─── คำขอของฉัน ───────────────────────────────── -->
 <div class="mb-6">
-  <h2 class="text-sm font-semibold text-gray-600 mb-3">คำขอของฉัน</h2>
+  <h2 class="text-sm font-semibold text-gray-600 mb-3" data-th="คำขอของฉัน" data-en="My Requests">คำขอของฉัน</h2>
   <div class="card overflow-hidden">
     <table class="w-full">
       <thead class="bg-gray-50">
         <tr>
-          <th class="table-header">ประเภท</th>
-          <th class="table-header">ช่วงวันที่</th>
-          <th class="table-header">จำนวน</th>
-          <th class="table-header">สถานะ</th>
-          <th class="table-header">วันที่ส่ง</th>
+          <th class="table-header" data-th="ประเภท" data-en="Type">ประเภท</th>
+          <th class="table-header" data-th="ช่วงวันที่" data-en="Date Range">ช่วงวันที่</th>
+          <th class="table-header" data-th="จำนวน" data-en="Days">จำนวน</th>
+          <th class="table-header" data-th="สถานะ" data-en="Status">สถานะ</th>
+          <th class="table-header" data-th="วันที่ส่ง" data-en="Submitted">วันที่ส่ง</th>
           <th class="table-header"></th>
         </tr>
       </thead>
@@ -44,7 +45,7 @@
         <tr class="hover:bg-gray-50">
           <td class="table-cell">{{ r.leave_type.name }}</td>
           <td class="table-cell text-gray-500 text-xs">{{ r.start_date|date:"d M Y" }} — {{ r.end_date|date:"d M Y" }}</td>
-          <td class="table-cell font-medium">{{ r.days }} วัน</td>
+          <td class="table-cell font-medium">{{ r.days }} <span data-th="วัน" data-en="d">วัน</span></td>
           <td class="table-cell">
             <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
               {{ r.get_status_display }}
@@ -52,15 +53,16 @@
           </td>
           <td class="table-cell text-gray-400 text-xs">{{ r.created_at|date:"d M Y" }}</td>
           <td class="table-cell text-right whitespace-nowrap">
-            <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a>
+            <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs" data-th="ดู" data-en="View">ดู</a>
             {% if r.status == 'pending' %}
             · <a href="{% url 'leave_cancel' r.pk %}" class="text-red-500 hover:underline text-xs"
+                data-th="ยกเลิก" data-en="Cancel"
                 onclick="return confirm('ยืนยันยกเลิกคำขอ?')">ยกเลิก</a>
             {% endif %}
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="table-cell text-center text-gray-400 py-8">ยังไม่มีคำขอลา</td></tr>
+        <tr><td colspan="6" class="table-cell text-center text-gray-400 py-8" data-th="ยังไม่มีคำขอลา" data-en="No leave requests yet">ยังไม่มีคำขอลา</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -71,7 +73,7 @@
 {% if team_requests is not None %}
 <div>
   <h2 class="text-sm font-semibold text-gray-600 mb-3">
-    คำขอทีม
+    <span data-th="คำขอทีม" data-en="Team Requests">คำขอทีม</span>
     {% if team_requests %}
       <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold"
             style="background:#2563EB;color:#fff;">{{ team_requests|length }}</span>
@@ -81,12 +83,12 @@
     <table class="w-full">
       <thead class="bg-gray-50">
         <tr>
-          <th class="table-header">พนักงาน</th>
-          <th class="table-header">ประเภท</th>
-          <th class="table-header">ช่วงวันที่</th>
-          <th class="table-header">จำนวน</th>
-          <th class="table-header">สถานะ</th>
-          <th class="table-header">วันที่ส่ง</th>
+          <th class="table-header" data-th="พนักงาน" data-en="Employee">พนักงาน</th>
+          <th class="table-header" data-th="ประเภท" data-en="Type">ประเภท</th>
+          <th class="table-header" data-th="ช่วงวันที่" data-en="Date Range">ช่วงวันที่</th>
+          <th class="table-header" data-th="จำนวน" data-en="Days">จำนวน</th>
+          <th class="table-header" data-th="สถานะ" data-en="Status">สถานะ</th>
+          <th class="table-header" data-th="วันที่ส่ง" data-en="Submitted">วันที่ส่ง</th>
           <th class="table-header"></th>
         </tr>
       </thead>
@@ -96,7 +98,7 @@
           <td class="table-cell font-medium">{{ r.employee.get_full_name }}</td>
           <td class="table-cell">{{ r.leave_type.name }}</td>
           <td class="table-cell text-gray-500 text-xs">{{ r.start_date|date:"d M Y" }} — {{ r.end_date|date:"d M Y" }}</td>
-          <td class="table-cell font-medium">{{ r.days }} วัน</td>
+          <td class="table-cell font-medium">{{ r.days }} <span data-th="วัน" data-en="d">วัน</span></td>
           <td class="table-cell">
             <span class="badge {% if r.status == 'approved' %}bg-green-100 text-green-700{% elif r.status == 'rejected' %}bg-red-100 text-red-700{% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500{% else %}bg-yellow-100 text-yellow-700{% endif %}">
               {{ r.get_status_display }}
@@ -104,11 +106,11 @@
           </td>
           <td class="table-cell text-gray-400 text-xs">{{ r.created_at|date:"d M Y" }}</td>
           <td class="table-cell text-right">
-            <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a>
+            <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs" data-th="ดู" data-en="View">ดู</a>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="table-cell text-center text-gray-400 py-8">ไม่มีคำขอลาในทีม</td></tr>
+        <tr><td colspan="7" class="table-cell text-center text-gray-400 py-8" data-th="ไม่มีคำขอลาในทีม" data-en="No team requests">ไม่มีคำขอลาในทีม</td></tr>
         {% endfor %}
       </tbody>
     </table>

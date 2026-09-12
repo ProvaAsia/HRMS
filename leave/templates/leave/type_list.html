@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Leave Types{% endblock %}
-{% block page_title %}Leave Types{% endblock %}
+{% block page_title %}<span data-th="ประเภทการลา" data-en="Leave Types">ประเภทการลา</span>{% endblock %}
 
 {% block content %}
 <div class="grid md:grid-cols-3 gap-6">
@@ -10,10 +10,10 @@
       <table class="w-full">
         <thead class="bg-gray-50">
           <tr>
-            <th class="table-header">Name</th>
-            <th class="table-header">Days/Year</th>
-            <th class="table-header">Paid</th>
-            <th class="table-header">Description</th>
+            <th class="table-header" data-th="ชื่อประเภท" data-en="Name">ชื่อประเภท</th>
+            <th class="table-header" data-th="วัน/ปี" data-en="Days/Year">วัน/ปี</th>
+            <th class="table-header" data-th="ค่าจ้าง" data-en="Paid">ค่าจ้าง</th>
+            <th class="table-header" data-th="รายละเอียด" data-en="Description">รายละเอียด</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -23,15 +23,15 @@
             <td class="table-cell">{{ t.days_per_year }}</td>
             <td class="table-cell">
               {% if t.is_paid %}
-              <span class="badge bg-green-100 text-green-700">Paid</span>
+              <span class="badge bg-green-100 text-green-700" data-th="มีค่าจ้าง" data-en="Paid">มีค่าจ้าง</span>
               {% else %}
-              <span class="badge bg-gray-100 text-gray-500">Unpaid</span>
+              <span class="badge bg-gray-100 text-gray-500" data-th="ไม่มีค่าจ้าง" data-en="Unpaid">ไม่มีค่าจ้าง</span>
               {% endif %}
             </td>
             <td class="table-cell text-gray-500 text-xs">{{ t.description|default:"—"|truncatechars:60 }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" class="table-cell text-center text-gray-400 py-8">No leave types yet.</td></tr>
+          <tr><td colspan="4" class="table-cell text-center text-gray-400 py-8" data-th="ยังไม่มีประเภทการลา" data-en="No leave types yet.">ยังไม่มีประเภทการลา</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -40,29 +40,29 @@
 
   <!-- Add Form -->
   <div class="card p-5">
-    <h3 class="font-semibold text-gray-900 mb-4">Add Leave Type</h3>
+    <h3 class="font-semibold text-gray-900 mb-4" data-th="เพิ่มประเภทการลา" data-en="Add Leave Type">เพิ่มประเภทการลา</h3>
     <form method="post" class="space-y-3">
       {% csrf_token %}
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Name</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="ชื่อ" data-en="Name">ชื่อ</label>
         {{ form.name }}
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Days per Year</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="จำนวนวันต่อปี" data-en="Days per Year">จำนวนวันต่อปี</label>
         {{ form.days_per_year }}
       </div>
       <div class="flex items-center gap-2">
         {{ form.is_paid }}
-        <label class="text-sm text-gray-700">Paid Leave</label>
+        <label class="text-sm text-gray-700" data-th="ลามีค่าจ้าง" data-en="Paid Leave">ลามีค่าจ้าง</label>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Description</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="รายละเอียด" data-en="Description">รายละเอียด</label>
         {{ form.description }}
       </div>
       {% if form.errors %}
-      <p class="text-xs text-red-600">Please correct the errors above.</p>
+      <p class="text-xs text-red-600" data-th="กรุณาตรวจสอบข้อมูลอีกครั้ง" data-en="Please correct the errors above.">กรุณาตรวจสอบข้อมูลอีกครั้ง</p>
       {% endif %}
-      <button type="submit" class="btn-primary w-full justify-center">Add Type</button>
+      <button type="submit" class="btn-primary w-full justify-center" data-th="เพิ่มประเภท" data-en="Add Type">เพิ่มประเภท</button>
     </form>
   </div>
 </div>

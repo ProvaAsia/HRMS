@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}Leave Balances{% endblock %}
-{% block page_title %}Leave Balances{% endblock %}
+{% block page_title %}<span data-th="วันลาคงเหลือ" data-en="Leave Balances">วันลาคงเหลือ</span>{% endblock %}
 
 {% block content %}
 <!-- Year filter -->
 <div class="flex items-center gap-3 mb-4">
-  <span class="text-sm text-gray-600">Year:</span>
+  <span class="text-sm text-gray-600" data-th="ปี:" data-en="Year:">ปี:</span>
   {% for y in "2024,2025,2026,2027"|split:"," %}
   <a href="?year={{ y }}"
      class="px-3 py-1 rounded-full text-sm font-medium
@@ -22,11 +22,11 @@
       <table class="w-full">
         <thead class="bg-gray-50">
           <tr>
-            <th class="table-header">Employee</th>
-            <th class="table-header">Leave Type</th>
-            <th class="table-header">Entitled</th>
-            <th class="table-header">Used</th>
-            <th class="table-header">Remaining</th>
+            <th class="table-header" data-th="พนักงาน" data-en="Employee">พนักงาน</th>
+            <th class="table-header" data-th="ประเภทการลา" data-en="Leave Type">ประเภทการลา</th>
+            <th class="table-header" data-th="สิทธิ์" data-en="Entitled">สิทธิ์</th>
+            <th class="table-header" data-th="ใช้ไป" data-en="Used">ใช้ไป</th>
+            <th class="table-header" data-th="คงเหลือ" data-en="Remaining">คงเหลือ</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -41,7 +41,8 @@
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8">No balances for {{ year }}.</td></tr>
+          <tr><td colspan="5" class="table-cell text-center text-gray-400 py-8"
+                  data-th="ไม่มีข้อมูลวันลาสำหรับปีนี้" data-en="No balances for {{ year }}.">ไม่มีข้อมูลวันลาสำหรับปีนี้</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -50,29 +51,29 @@
 
   <!-- Set Balance Form -->
   <div class="card p-5">
-    <h3 class="font-semibold text-gray-900 mb-4">Set Balance</h3>
+    <h3 class="font-semibold text-gray-900 mb-4" data-th="ตั้งค่าวันลา" data-en="Set Balance">ตั้งค่าวันลา</h3>
     <form method="post" class="space-y-3">
       {% csrf_token %}
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Employee</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="พนักงาน" data-en="Employee">พนักงาน</label>
         {{ form.employee }}
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Leave Type</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="ประเภทการลา" data-en="Leave Type">ประเภทการลา</label>
         {{ form.leave_type }}
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Year</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="ปี" data-en="Year">ปี</label>
         {{ form.year }}
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Entitled Days</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1" data-th="วันสิทธิ์" data-en="Entitled Days">วันสิทธิ์</label>
         {{ form.entitled_days }}
       </div>
       {% if form.errors %}
-      <p class="text-xs text-red-600">Please check all fields.</p>
+      <p class="text-xs text-red-600" data-th="กรุณาตรวจสอบข้อมูล" data-en="Please check all fields.">กรุณาตรวจสอบข้อมูล</p>
       {% endif %}
-      <button type="submit" class="btn-primary w-full justify-center">Save Balance</button>
+      <button type="submit" class="btn-primary w-full justify-center" data-th="บันทึก" data-en="Save Balance">บันทึก</button>
     </form>
   </div>
 </div>
