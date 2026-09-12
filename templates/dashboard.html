@@ -211,7 +211,7 @@
               {% else %}<span data-th="✓" data-en="✓">✓</span>
               {% endif %}
             {% elif m.status == 'leave' %}
-              <span data-th="ลา" data-en="Leave">ลา</span>
+              <span data-th="ลา" data-en="Leave">ลา{% if m.leave_type_name %} · {{ m.leave_type_name }}{% endif %}</span>
             {% elif m.status == 'no_record' %}
               <span data-th="ไม่มีข้อมูล" data-en="No data">—</span>
             {% else %}

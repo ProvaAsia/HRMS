@@ -105,6 +105,15 @@ def dashboard(request):
             ).select_related('employee')
             records_by_emp = {r.employee_id: r for r in today_records}
 
+            # ดึง approved leave ที่ครอบคลุมวันนี้ — ถ้าไม่มี AttendanceRecord ก็นับเป็น on_leave
+            approved_today = LeaveRequest.objects.filter(
+                employee__in=direct_reports,
+                status='approved',
+                start_date__lte=today,
+                end_date__gte=today,
+            ).values_list('employee_id', 'leave_type__name')
+            on_leave_emps = {emp_id: lt_name for emp_id, lt_name in approved_today}
+
             dept_data = defaultdict(lambda: {
                 'total': 0, 'present': 0, 'on_leave': 0, 'absent': 0, 'members': []
             })
@@ -124,8 +133,11 @@ def dashboard(request):
                     else:
                         member_status = 'absent'
                         dept_data[dept]['absent'] += 1
+                elif emp.pk in on_leave_emps:
+                    # ไม่มี attendance record แต่มี approved leave → on leave
+                    member_status = 'leave'
+                    dept_data[dept]['on_leave'] += 1
                 else:
-                    # No record yet — treat as no data (absent bucket for summary)
                     member_status = 'no_record'
                     dept_data[dept]['absent'] += 1
 
@@ -133,6 +145,7 @@ def dashboard(request):
                     'emp': emp,
                     'status': member_status,
                     'record': record,
+                    'leave_type_name': on_leave_emps.get(emp.pk),
                 })
 
             dept_dict = dict(dept_data)
