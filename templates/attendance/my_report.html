@@ -86,18 +86,14 @@
               {% else %}bg-gray-100 text-gray-600{% endif %}">
               {{ r.get_status_display }}
             </span>
-            {% if correction_by_date|default:"" %}
-              {% with cs=correction_by_date|default:{} %}
-                {% if r.date in cs %}
-                  <span class="ml-1 badge text-xs
-                    {% if cs|default:{}|key:r.date == 'pending' %}bg-yellow-50 text-yellow-600
-                    {% elif cs|default:{}|key:r.date == 'approved' %}bg-green-50 text-green-600
-                    {% else %}bg-red-50 text-red-600{% endif %}">
-                    Correction: {{ cs|default:{}|key:r.date }}
-                  </span>
-                {% endif %}
-              {% endwith %}
-            {% endif %}
+            {% for cd, cs in correction_items %}{% if cd == r.date %}
+              <span class="ml-1 badge text-xs
+                {% if cs == 'pending' %}bg-yellow-50 text-yellow-600
+                {% elif cs == 'approved' %}bg-green-50 text-green-600
+                {% else %}bg-red-50 text-red-600{% endif %}">
+                Correction: {{ cs }}
+              </span>
+            {% endif %}{% endfor %}
           </td>
           <td class="px-4 py-3 text-right">
             <a href="{% url 'correction_request_create_for_record' r.pk %}"

@@ -117,6 +117,7 @@ def attendance_my_report(request):
         'ot_records': ot_records,
         'total_ot_hours': total_ot_hours,
         'correction_by_date': correction_by_date,
+        'correction_items': list(correction_by_date.items()),
     })
 
 
