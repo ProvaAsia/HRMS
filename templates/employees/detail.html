@@ -172,4 +172,47 @@
 
   </div>
 </div>
+
+<!-- Your Team (direct reports of this profile) -->
+{% if subordinates %}
+<div class="mt-6">
+  <h3 class="font-semibold text-gray-700 text-sm mb-4">
+    Your Team
+    <span class="ml-2 text-xs font-normal text-gray-400">({{ subordinates.count }} people)</span>
+  </h3>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    {% for p in subordinates %}
+    <a href="{% url 'employee_detail' p.pk %}"
+       class="card p-4 flex flex-col items-center text-center gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group">
+      {% if p.photo %}
+      <img src="{{ p.photo.url }}"
+           class="w-16 h-16 rounded-2xl object-cover ring-2 ring-gray-100 group-hover:ring-blue-200 transition-all">
+      {% else %}
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg"
+           style="background: linear-gradient(135deg, #3B82F6, #6366F1);">
+        {{ p.first_name_en.0 }}{{ p.last_name_en.0 }}
+      </div>
+      {% endif %}
+      <div class="w-full">
+        <p class="font-semibold text-gray-900 text-sm leading-tight truncate group-hover:text-blue-700 transition-colors">
+          {{ p.first_name_en }} {{ p.last_name_en }}
+        </p>
+        {% if p.first_name_th %}
+        <p class="text-xs text-gray-400 truncate mt-0.5">{{ p.first_name_th }} {{ p.last_name_th }}</p>
+        {% endif %}
+        {% if p.job_title %}
+        <p class="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-tight">{{ p.job_title }}</p>
+        {% endif %}
+        {% if p.department %}
+        <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">
+          {{ p.department.name }}
+        </span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

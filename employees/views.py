@@ -99,9 +99,15 @@ def employee_detail(request, pk):
             return redirect('dashboard')
         can_edit = False
 
+    # Direct reports ของ profile นั้น (สำหรับแสดง Your Team)
+    subordinates = EmployeeProfile.objects.filter(
+        direct_manager=profile
+    ).select_related('department').order_by('first_name_en')
+
     return render(request, 'employees/detail.html', {
         'profile': profile,
         'can_edit': can_edit,
+        'subordinates': subordinates,
     })
 
 
