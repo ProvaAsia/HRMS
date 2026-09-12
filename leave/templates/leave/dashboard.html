@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Leave{% endblock %}
+{% block page_title %}Leave Management{% endblock %}
+{% block top_actions %}
+  <a href="{% url 'leave_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    ขอลา
+  </a>
+  {% if user.can_approve %}
+  <a href="{% url 'leave_list' %}?status=pending" class="btn-secondary">
+    รออนุมัติ
+    {% if pending_count %}<span class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5">{{ pending_count }}</span>{% endif %}
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- ─── Leave Balance ─────────────────────────────────────────────── -->
+<div class="mb-6">
+  <h2 class="text-sm font-semibold text-gray-600 mb-3">วันลาของฉัน — {{ year }}</h2>
+
+  {% if balance_summary %}
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    {% for b in balance_summary %}
+    <div class="card p-5">
+      <!-- Header row -->
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-900">{{ b.leave_type.name }}</p>
+          {% if b.leave_type.name_th %}<p class="text-xs text-gray-400">{{ b.leave_type.name_th }}</p>{% endif %}
+        </div>
+        <div class="flex flex-col items-end gap-1">
+          {% if b.is_prorated %}
+          <span style="background:#FEF9C3;color:#92400E;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;">
+            Pro-rate {{ b.months_remaining }}/12 เดือน
+          </span>
+          {% endif %}
+          {% if b.accrual_per_year > 0 %}
+          <span style="background:#EEF2FF;color:#4338CA;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;">
+            +{{ b.accrual_per_year }}วัน/ปี
+            {% if b.years_completed > 0 %}(ทำงาน {{ b.years_completed }} ปี){% endif %}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Big numbers -->
+      <div class="flex items-end gap-4 mb-3">
+        <div>
+          <p class="text-3xl font-bold" style="color:{% if b.remaining_days == 0 %}#DC2626{% elif b.remaining_days <= 3 %}#EA580C{% else %}#152057{% endif %};">{{ b.remaining_days }}</p>
+          <p class="text-xs text-gray-400 -mt-0.5">วันคงเหลือ</p>
+        </div>
+        <div class="text-sm text-gray-400 pb-0.5">
+          ใช้ <span class="font-semibold text-gray-700">{{ b.used_days|floatformat:0 }}</span>
+          / สิทธิ์ <span class="font-semibold text-gray-700">{{ b.entitled_days }}</span> วัน
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full rounded-full h-1.5" style="background:#E5E7EB;">
+        <div class="h-1.5 rounded-full transition-all" style="width:{{ b.used_pct }}%;background:{% if b.used_pct >= 100 %}#DC2626{% elif b.used_pct >= 75 %}#EA580C{% else %}#2563EB{% endif %};"></div>
+      </div>
+
+      <!-- Accrual detail -->
+      {% if b.accrual_per_year > 0 %}
+      <p class="text-xs text-gray-400 mt-2">
+        ฐาน {{ b.base_days }} วัน
+        {% if b.years_completed > 0 %}+ {{ b.years_completed }}×{{ b.accrual_per_year }} วัน (อายุงาน){% endif %}
+        {% if b.is_prorated %} → pro-rate {{ b.months_remaining }} เดือน{% endif %}
+        = <span class="font-medium text-gray-600">{{ b.entitled_days }} วัน</span>
+      </p>
+      {% elif b.is_prorated %}
+      <p class="text-xs text-gray-400 mt-2">
+        ฐาน {{ b.base_days }} วัน → pro-rate {{ b.months_remaining }}/12 เดือน = <span class="font-medium text-gray-600">{{ b.entitled_days }} วัน</span>
+      </p>
+      {% endif %}
+
+      <!-- Paid / Unpaid badge -->
+      <div class="mt-2">
+        {% if b.leave_type.is_paid %}
+        <span style="background:#ECFDF5;color:#065F46;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;">มีค่าจ้าง</span>
+        {% else %}
+        <span style="background:#FEF2F2;color:#991B1B;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;">ไม่มีค่าจ้าง</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card p-8 text-center text-sm text-gray-400">ยังไม่มีประเภทวันลา กรุณาติดต่อ HR</div>
+  {% endif %}
+</div>
+
+<!-- ─── Recent Requests ───────────────────────────────────────────── -->
+<div class="card overflow-hidden">
+  <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-900 text-sm">คำขอล่าสุด</h2>
+    <a href="{% url 'leave_list' %}" class="text-xs text-blue-600 hover:underline">ดูทั้งหมด →</a>
+  </div>
+  <table class="w-full">
+    <thead class="bg-gray-50">
+      <tr>
+        {% if user.can_approve %}<th class="table-header">พนักงาน</th>{% endif %}
+        <th class="table-header">ประเภท</th>
+        <th class="table-header">วันที่</th>
+        <th class="table-header">จำนวน</th>
+        <th class="table-header">สถานะ</th>
+        <th class="table-header"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for r in my_requests %}
+      <tr class="hover:bg-gray-50">
+        {% if user.can_approve %}<td class="table-cell font-medium">{{ r.employee.get_full_name }}</td>{% endif %}
+        <td class="table-cell">{{ r.leave_type.name }}</td>
+        <td class="table-cell text-gray-500 text-xs">{{ r.start_date|date:"d M" }} — {{ r.end_date|date:"d M Y" }}</td>
+        <td class="table-cell font-medium">{{ r.days }} วัน</td>
+        <td class="table-cell">
+          <span class="badge
+            {% if r.status == 'approved' %}bg-green-100 text-green-700
+            {% elif r.status == 'rejected' %}bg-red-100 text-red-700
+            {% elif r.status == 'cancelled' %}bg-gray-100 text-gray-500
+            {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            {{ r.get_status_display }}
+          </span>
+        </td>
+        <td class="table-cell text-right">
+          <a href="{% url 'leave_detail' r.pk %}" class="text-blue-600 hover:underline text-xs">ดู</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="table-cell text-center text-gray-400 py-10">ยังไม่มีคำขอลา</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
