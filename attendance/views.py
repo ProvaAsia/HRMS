@@ -487,7 +487,8 @@ def payroll_summary(request):
         if eid not in att_by_emp:
             att_by_emp[eid] = {'present': 0, 'late': 0, 'absent': 0, 'wfh': 0, 'half_day': 0, 'leave': 0, 'work_hours': 0}
         att_by_emp[eid][r['status']] = att_by_emp[eid].get(r['status'], 0) + 1
-        att_by_emp[eid]['work_hours'] += float(r['work_hours'] or 0)
+        # cap regular work hours at 8 hrs/day; extra hours are OT (tracked separately)
+        att_by_emp[eid]['work_hours'] += min(float(r['work_hours'] or 0), 8.0)
 
     # Leave days per employee
     leave_qs = LeaveRequest.objects.filter(
