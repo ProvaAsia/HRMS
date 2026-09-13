@@ -59,9 +59,10 @@ WSGI_APPLICATION = 'hrms.wsgi.application'
 
 # Database — Supabase (PostgreSQL)
 DATABASE_URL = config('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
-DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=0)
-}
+_db = dj_database_url.parse(DATABASE_URL, conn_max_age=0)
+_db.setdefault('OPTIONS', {})
+_db['OPTIONS']['options'] = '-c lock_timeout=10000 -c statement_timeout=60000'
+DATABASES = {'default': _db}
 
 AUTH_USER_MODEL = 'accounts.User'
 
