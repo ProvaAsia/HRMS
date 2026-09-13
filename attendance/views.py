@@ -175,13 +175,50 @@ def import_excel(request):
         excel_file = request.FILES['excel_file']
         try:
             import openpyxl
+            from datetime import datetime, time as dtime
             wb = openpyxl.load_workbook(excel_file)
             ws = wb.active
 
             created = 0
             errors = []
 
-            # Expected columns: username/email, date (YYYY-MM-DD), clock_in (HH:MM), clock_out (HH:MM), status
+            # Pre-load employee lookup caches (avoids N+1 queries)
+            try:
+                from employees.models import EmployeeProfile
+                emp_by_id = {p.employee_id: p.user for p in EmployeeProfile.objects.select_related('user').all()}
+            except Exception:
+                emp_by_id = {}
+            emp_by_username = {u.username: u for u in User.objects.all()}
+            emp_by_email = {u.email: u for u in User.objects.all() if u.email}
+
+            def resolve_employee(key):
+                key = str(key).strip()
+                if key in emp_by_id:
+                    return emp_by_id[key]
+                if key in emp_by_username:
+                    return emp_by_username[key]
+                if key in emp_by_email:
+                    return emp_by_email[key]
+                raise User.DoesNotExist(key)
+
+            def parse_time(val):
+                if val is None:
+                    return None
+                if isinstance(val, dtime):
+                    return val
+                if hasattr(val, 'time'):
+                    return val.time()
+                s = str(val).strip()
+                for fmt in ('%H:%M:%S', '%H:%M'):
+                    try:
+                        return datetime.strptime(s, fmt).time()
+                    except ValueError:
+                        pass
+                return None
+
+            valid_statuses = {s for s, _ in AttendanceRecord.STATUS_CHOICES}
+
+            # Expected columns: employee_id/username/email, date, clock_in, clock_out, status
             for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not any(row):
                     continue
@@ -190,49 +227,21 @@ def import_excel(request):
                         row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else 'present'
                     )
 
-                    # Resolve employee — try employee_id, then username, then email
-                    username_or_email = str(username_or_email).strip()
-                    try:
-                        from employees.models import EmployeeProfile
-                        profile = EmployeeProfile.objects.get(employee_id=username_or_email)
-                        employee = profile.user
-                    except Exception:
-                        try:
-                            employee = User.objects.get(username=username_or_email)
-                        except User.DoesNotExist:
-                            employee = User.objects.get(email=username_or_email)
+                    employee = resolve_employee(username_or_email)
 
                     # Parse date
-                    from datetime import datetime, time as dtime
                     if isinstance(date_val, str):
                         record_date = datetime.strptime(date_val, '%Y-%m-%d').date()
                     else:
                         record_date = date_val  # already a date from Excel
 
-                    # Parse times
-                    def parse_time(val):
-                        if val is None:
-                            return None
-                        if isinstance(val, dtime):
-                            return val
-                        if hasattr(val, 'time'):
-                            return val.time()
-                        s = str(val).strip()
-                        for fmt in ('%H:%M:%S', '%H:%M'):
-                            try:
-                                return datetime.strptime(s, fmt).time()
-                            except ValueError:
-                                pass
-                        return None
-
                     clock_in = parse_time(clock_in_val)
                     clock_out = parse_time(clock_out_val)
                     status = (status_val or 'present').strip().lower()
-                    valid_statuses = {s for s, _ in AttendanceRecord.STATUS_CHOICES}
                     if status not in valid_statuses:
                         status = 'present'
 
-                    record, _ = AttendanceRecord.objects.update_or_create(
+                    AttendanceRecord.objects.update_or_create(
                         employee=employee,
                         date=record_date,
                         defaults={
