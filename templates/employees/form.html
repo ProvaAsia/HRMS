@@ -7,6 +7,21 @@
 {% endblock %}
 
 {% block content %}
+
+{% if form.errors %}
+<div class="alert-error mb-4">
+  <strong>กรุณาตรวจสอบข้อมูล:</strong>
+  {% for field in form %}
+    {% if field.errors %}
+      <div>{{ field.label }}: {{ field.errors.0 }}</div>
+    {% endif %}
+  {% endfor %}
+  {% if form.non_field_errors %}
+    <div>{{ form.non_field_errors }}</div>
+  {% endif %}
+</div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data" class="space-y-6">
   {% csrf_token %}
 
@@ -46,6 +61,11 @@
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
         {{ form.date_of_birth }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+        {{ form.role }}
+        {% if form.role.errors %}<p class="text-red-500 text-xs mt-1">{{ form.role.errors.0 }}</p>{% endif %}
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Photo</label>
