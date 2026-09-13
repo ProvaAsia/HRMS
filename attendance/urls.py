@@ -7,6 +7,7 @@ urlpatterns = [
     path('my-report/', views.attendance_my_report, name='attendance_my_report'),
     path('list/', views.attendance_list, name='attendance_list'),
     path('import/', views.import_excel, name='attendance_import_excel'),
+    path('export/', views.attendance_list_export, name='attendance_list_export'),
     path('<int:pk>/edit/', views.attendance_edit, name='attendance_edit'),
 
     # Manager team timesheet

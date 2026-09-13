@@ -458,6 +458,92 @@ def correction_request_review(request, pk):
     })
 
 
+# ─── Attendance list export ───────────────────────────────────────────────────
+
+@login_required
+def attendance_list_export(request):
+    """HR/Admin: export attendance records for the selected month as Excel (import-ready format)."""
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('attendance_dashboard')
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from django.http import HttpResponse
+
+    year = int(request.GET.get('year', timezone.now().year))
+    month = int(request.GET.get('month', timezone.now().month))
+
+    records = AttendanceRecord.objects.filter(
+        date__year=year, date__month=month
+    ).select_related('employee', 'employee__employee_profile').order_by('date', 'employee__first_name')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f'{year}-{month:02d}'
+
+    # Styles
+    header_font = Font(bold=True, color='FFFFFF', size=10)
+    header_fill = PatternFill('solid', fgColor='152057')
+    center = Alignment(horizontal='center', vertical='center')
+    left = Alignment(horizontal='left', vertical='center')
+    thin = Border(
+        left=Side(style='thin', color='D1D5DB'),
+        right=Side(style='thin', color='D1D5DB'),
+        top=Side(style='thin', color='D1D5DB'),
+        bottom=Side(style='thin', color='D1D5DB'),
+    )
+
+    # Header row — matches import template columns exactly
+    headers = ['employee_id', 'date (YYYY-MM-DD)', 'clock_in (HH:MM)', 'clock_out (HH:MM)', 'status', 'ชื่อพนักงาน (อ้างอิงเท่านั้น)']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center if col < 6 else left
+        cell.border = thin
+    ws.row_dimensions[1].height = 22
+
+    # Data rows
+    alt_fill = PatternFill('solid', fgColor='F9FAFB')
+    for row_idx, r in enumerate(records, 2):
+        try:
+            emp_code = r.employee.employee_profile.employee_id or r.employee.username
+        except Exception:
+            emp_code = r.employee.username
+
+        clock_in_str = r.clock_in.strftime('%H:%M') if r.clock_in else ''
+        clock_out_str = r.clock_out.strftime('%H:%M') if r.clock_out else ''
+
+        row_data = [
+            emp_code,
+            r.date.strftime('%Y-%m-%d'),
+            clock_in_str,
+            clock_out_str,
+            r.status,
+            r.employee.get_full_name() or r.employee.username,
+        ]
+        fill = alt_fill if row_idx % 2 == 0 else None
+        for col, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col, value=val)
+            cell.border = thin
+            cell.alignment = left
+            if fill:
+                cell.fill = fill
+
+    # Column widths
+    for i, w in enumerate([18, 18, 16, 16, 12, 28], 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="attendance_{year}-{month:02d}.xlsx"'
+    wb.save(response)
+    return response
+
+
 # ─── Payroll summary ──────────────────────────────────────────────────────────
 
 @login_required
