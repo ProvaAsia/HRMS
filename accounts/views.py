@@ -224,6 +224,26 @@ def user_delete(request, pk):
 
 
 @login_required
+def user_change_role(request, pk):
+    if not request.user.is_super_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('user_list')
+    if request.method == 'POST':
+        user = get_object_or_404(User, pk=pk)
+        if user.pk == request.user.pk:
+            messages.error(request, 'Cannot change your own role.')
+            return redirect('user_list')
+        new_role = request.POST.get('role')
+        if new_role in ('admin', 'manager', 'employee'):
+            user.role = new_role
+            user.save()
+            messages.success(request, f'Role updated to {user.get_role_display()} for {user.get_full_name() or user.username}.')
+        else:
+            messages.error(request, 'Invalid role.')
+    return redirect('user_list')
+
+
+@login_required
 def invite_user(request):
     """HR/Admin creates an inactive user and gets a setup link to share."""
     if not request.user.is_hr_or_admin:

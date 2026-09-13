@@ -9,6 +9,7 @@ urlpatterns = [
     path('accounts/users/create/', views.user_create, name='user_create'),
     path('accounts/users/<int:pk>/edit/', views.user_edit, name='user_edit'),
     path('accounts/users/<int:pk>/delete/', views.user_delete, name='user_delete'),
+    path('accounts/users/<int:pk>/change-role/', views.user_change_role, name='user_change_role'),
     path('accounts/invite/', views.invite_user, name='invite_user'),
     path('accounts/activate/<str:token>/', views.activate_account, name='activate_account'),
 ]
