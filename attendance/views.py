@@ -190,11 +190,17 @@ def import_excel(request):
                         row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else 'present'
                     )
 
-                    # Resolve employee
+                    # Resolve employee — try employee_id, then username, then email
+                    username_or_email = str(username_or_email).strip()
                     try:
-                        employee = User.objects.get(username=username_or_email)
-                    except User.DoesNotExist:
-                        employee = User.objects.get(email=username_or_email)
+                        from employees.models import EmployeeProfile
+                        profile = EmployeeProfile.objects.get(employee_id=username_or_email)
+                        employee = profile.user
+                    except Exception:
+                        try:
+                            employee = User.objects.get(username=username_or_email)
+                        except User.DoesNotExist:
+                            employee = User.objects.get(email=username_or_email)
 
                     # Parse date
                     from datetime import datetime, time as dtime
