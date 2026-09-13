@@ -320,8 +320,8 @@
 </div>
 {% endif %}
 
-<!-- Personal Calendar + Holidays (เห็นทุก role) -->
-{% if my_calendar_days %}
+<!-- Personal Calendar + Holidays (เฉพาะ role ที่ไม่มีตารางทีม) -->
+{% if my_calendar_days and not calendar_days %}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;" class="mb-5">
 
   <!-- ปฏิทินลาของฉัน -->
