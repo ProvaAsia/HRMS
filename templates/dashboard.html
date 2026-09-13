@@ -320,6 +320,79 @@
 </div>
 {% endif %}
 
+<!-- Personal Calendar + Holidays (เห็นทุก role) -->
+{% if my_calendar_days %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;" class="mb-5">
+
+  <!-- ปฏิทินลาของฉัน -->
+  <div class="card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-900">ปฏิทินลาของฉัน — {{ calendar_month|date:"F Y" }}</h3>
+      <a href="{% url 'my_leave_list' %}" class="text-xs text-blue-600 hover:underline">ดูทั้งหมด →</a>
+    </div>
+    <div class="overflow-x-auto">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-width:280px;">
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">จ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">อ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">พ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">พฤ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#9CA3AF;padding:4px 0;">ศ</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#DC2626;padding:4px 0;">ส</div>
+        <div style="text-align:center;font-size:10px;font-weight:600;color:#DC2626;padding:4px 0;">อา</div>
+        {% for _ in my_calendar_empty_prefix %}<div></div>{% endfor %}
+        {% for day in my_calendar_days %}
+        <div style="border-radius:8px;padding:4px 3px;min-height:48px;border:1.5px solid {% if day.is_today %}#2563EB{% elif day.holiday %}#D97706{% elif day.on_leave %}#F59E0B{% else %}#F3F4F6{% endif %};background:{% if day.on_leave %}#FFFBEB{% elif day.is_today %}#EFF6FF{% elif day.holiday %}#FFFBEB{% elif day.weekday >= 5 %}#FEF2F2{% else %}#fff{% endif %};">
+          <div style="font-size:11px;font-weight:{% if day.is_today %}700{% else %}500{% endif %};color:{% if day.is_today %}#2563EB{% elif day.holiday %}#B45309{% elif day.weekday >= 5 %}#DC2626{% else %}#374151{% endif %};text-align:center;margin-bottom:2px;">{{ day.date.day }}</div>
+          {% if day.holiday %}
+          <div style="background:#FDE68A;border-radius:3px;padding:1px 2px;font-size:8px;color:#78350F;text-align:center;" title="{{ day.holiday.name }}">🎌</div>
+          {% endif %}
+          {% for lr in day.on_leave %}
+          <div style="background:#FEF3C7;border-radius:3px;padding:1px 2px;font-size:8px;color:#92400E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ lr.leave_type }}">{{ lr.leave_type }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <!-- วันลาในเดือนนี้ -->
+    {% if my_approved_leaves_exist %}
+    <div class="mt-3 pt-3 border-t border-gray-100">
+      <p class="text-xs text-gray-400">มีวันลาที่อนุมัติแล้วในเดือนนี้</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- วันหยุดนักขัตฤกษ์ -->
+  <div class="card p-5" style="max-height:420px;overflow-y:auto;">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-900">🎌 วันหยุดนักขัตฤกษ์ {{ calendar_month|date:"Y" }}</h3>
+    </div>
+    {% if holidays_year %}
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      {% for h in holidays_year %}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:{% if h.date.month == calendar_month.month %}#FFFBEB{% else %}#F9FAFB{% endif %};border:1px solid {% if h.date.month == calendar_month.month %}#FDE68A{% else %}#F3F4F6{% endif %};">
+        <div style="text-align:center;min-width:36px;">
+          <div style="font-size:16px;font-weight:700;color:#152057;line-height:1;">{{ h.date.day }}</div>
+          <div style="font-size:9px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;">{{ h.date|date:"M" }}</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.name }}</div>
+          {% if h.name_en %}<div style="font-size:11px;color:#6B7280;">{{ h.name_en }}</div>{% endif %}
+        </div>
+        <div style="font-size:10px;color:{% if h.date.weekday >= 5 %}#DC2626{% else %}#9CA3AF{% endif %};">{{ h.date|date:"D" }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:32px 0;color:#9CA3AF;font-size:13px;">
+      <div style="font-size:28px;margin-bottom:8px;">🎌</div>
+      ยังไม่มีวันหยุดในปีนี้
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endif %}
+
 <!-- Upcoming Trainings -->
 <div class="card p-5">
   <div class="flex items-center justify-between mb-4">

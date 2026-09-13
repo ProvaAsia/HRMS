@@ -45,8 +45,51 @@ def dashboard(request):
         'today_attendance': AttendanceRecord.objects.filter(date=today).count(),
     }
 
-    # Manager-specific: pending approvals from direct reports + monthly leave calendar
+    # ── ข้อมูลที่ทุก role เห็น: วันหยุดบริษัท + ปฏิทินลาตัวเอง ──
     user = request.user
+    from datetime import date as date_cls
+    from attendance.models import CompanyHoliday
+    from leave.models import LeaveRequest as LR
+
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+    month_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+
+    # วันหยุดทั้งปี (ทุก role เห็น)
+    context['holidays_year'] = list(
+        CompanyHoliday.objects.filter(date__year=today.year).order_by('date')
+    )
+    context['calendar_month'] = today
+
+    # ปฏิทินลาส่วนตัวของ user คนนี้ (employee หรือ manager ก็เห็นของตัวเอง)
+    my_approved_leaves = LR.objects.filter(
+        employee=user,
+        status='approved',
+        start_date__lte=month_end,
+        end_date__gte=month_start,
+    ).select_related('leave_type').order_by('start_date')
+
+    holidays_this_month = {
+        h.date: h for h in CompanyHoliday.objects.filter(
+            date__year=today.year, date__month=today.month
+        )
+    }
+    num_days = month_end.day
+    my_days = []
+    for day in range(1, num_days + 1):
+        d = date_cls(today.year, today.month, day)
+        on_leave = [lr for lr in my_approved_leaves if lr.start_date <= d <= lr.end_date]
+        my_days.append({
+            'date': d,
+            'weekday': d.weekday(),
+            'is_today': d == today,
+            'on_leave': on_leave,
+            'holiday': holidays_this_month.get(d),
+        })
+    context['my_calendar_days'] = my_days
+    context['my_calendar_empty_prefix'] = list(range(month_start.weekday()))
+
+    # Manager-specific: pending approvals from direct reports + monthly leave calendar
     if user.can_approve:
         direct_reports = user.get_direct_report_users()
         if direct_reports.exists():
