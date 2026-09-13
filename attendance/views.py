@@ -556,3 +556,132 @@ def payroll_summary(request):
         'working_days': working_days,
         'month_name': f'{year}-{month:02d}',
     })
+
+
+@login_required
+def payroll_export(request):
+    """Export payroll summary as Excel (.xlsx)."""
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('attendance_dashboard')
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from django.http import HttpResponse
+    from leave.models import LeaveRequest, LeaveType
+    from overtime.models import OTRequest
+    import calendar
+
+    year = int(request.GET.get('year', timezone.now().year))
+    month = int(request.GET.get('month', timezone.now().month))
+
+    employees = User.objects.filter(is_active=True, is_superuser=False).order_by('first_name', 'last_name')
+
+    att_records = AttendanceRecord.objects.filter(
+        date__year=year, date__month=month
+    ).values('employee_id', 'status', 'work_hours')
+    att_by_emp = {}
+    for r in att_records:
+        eid = r['employee_id']
+        if eid not in att_by_emp:
+            att_by_emp[eid] = {'present': 0, 'late': 0, 'absent': 0, 'wfh': 0, 'half_day': 0, 'work_hours': 0}
+        att_by_emp[eid][r['status']] = att_by_emp[eid].get(r['status'], 0) + 1
+        att_by_emp[eid]['work_hours'] += min(float(r['work_hours'] or 0), 8.0)
+
+    from datetime import date as date_cls
+    month_start = date_cls(year, month, 1)
+    month_end = date_cls(year, month, calendar.monthrange(year, month)[1])
+    leave_qs = LeaveRequest.objects.filter(
+        status='approved', start_date__year=year, start_date__month=month,
+    ).select_related('leave_type').values('employee_id', 'leave_type__name', 'start_date', 'end_date')
+    leave_by_emp = {}
+    for lr in leave_qs:
+        eid = lr['employee_id']
+        if eid not in leave_by_emp:
+            leave_by_emp[eid] = []
+        start = max(lr['start_date'], month_start)
+        end = min(lr['end_date'], month_end)
+        days = max(0, (end - start).days + 1)
+        leave_by_emp[eid].append({'leave_type': lr['leave_type__name'], 'days': days})
+
+    ot_qs = OTRequest.objects.filter(
+        status='approved', date__year=year, date__month=month,
+    ).values('employee_id').annotate(total_ot=Sum('hours'))
+    ot_by_emp = {r['employee_id']: float(r['total_ot'] or 0) for r in ot_qs}
+
+    # Build workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f'{year}-{month:02d}'
+
+    # Styles
+    header_font = Font(bold=True, color='FFFFFF', size=10)
+    header_fill = PatternFill('solid', fgColor='152057')
+    center = Alignment(horizontal='center', vertical='center')
+    thin = Border(
+        left=Side(style='thin', color='D1D5DB'),
+        right=Side(style='thin', color='D1D5DB'),
+        top=Side(style='thin', color='D1D5DB'),
+        bottom=Side(style='thin', color='D1D5DB'),
+    )
+
+    # Title row
+    ws.merge_cells('A1:K1')
+    title_cell = ws['A1']
+    title_cell.value = f'สรุปข้อมูลสำหรับคำนวณเงินเดือน — {year}-{month:02d}'
+    title_cell.font = Font(bold=True, size=13, color='152057')
+    title_cell.alignment = center
+    ws.row_dimensions[1].height = 28
+
+    # Header row
+    headers = ['พนักงาน', 'แผนก', 'มา (วัน)', 'WFH', 'มาสาย', 'ขาด', 'ครึ่งวัน', 'ลา (วัน)', 'ชม.งาน', 'OT (ชม.)', 'ประเภทลา']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = thin
+    ws.row_dimensions[2].height = 22
+
+    # Data rows
+    for row_idx, emp in enumerate(employees, 3):
+        att = att_by_emp.get(emp.pk, {})
+        leave_items = leave_by_emp.get(emp.pk, [])
+        total_leave = sum(li['days'] for li in leave_items)
+        ot_hours = ot_by_emp.get(emp.pk, 0)
+        present = att.get('present', 0) + att.get('late', 0) + att.get('wfh', 0)
+        leave_str = ', '.join(f"{li['leave_type']} {li['days']}ว." for li in leave_items) or '—'
+
+        row_data = [
+            emp.get_full_name() or emp.username,
+            emp.department or '—',
+            present,
+            att.get('wfh', 0),
+            att.get('late', 0),
+            att.get('absent', 0),
+            att.get('half_day', 0),
+            total_leave,
+            round(att.get('work_hours', 0), 2),
+            round(ot_hours, 2),
+            leave_str,
+        ]
+        alt_fill = PatternFill('solid', fgColor='F9FAFB') if row_idx % 2 == 0 else None
+        for col, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col, value=val)
+            cell.border = thin
+            cell.alignment = Alignment(horizontal='center' if col > 2 else 'left', vertical='center')
+            if alt_fill:
+                cell.fill = alt_fill
+
+    # Column widths
+    col_widths = [22, 16, 9, 7, 7, 7, 9, 9, 10, 10, 40]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="payroll_{year}-{month:02d}.xlsx"'
+    wb.save(response)
+    return response
