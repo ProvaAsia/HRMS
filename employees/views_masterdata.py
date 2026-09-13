@@ -11,7 +11,7 @@ from attendance.models import CompanyHoliday
 
 
 def _require_super_admin(user):
-    return user.is_authenticated and user.role == 'super_admin'
+    return user.is_authenticated and user.role == 'admin'
 
 
 # ─── Overview ────────────────────────────────────────────────

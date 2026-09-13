@@ -34,7 +34,7 @@
         </td>
         <td class="table-cell text-gray-500">{{ u.email }}</td>
         <td class="table-cell">
-          <span class="badge {% if u.role == 'super_admin' %}bg-purple-100 text-purple-700{% elif u.role == 'hr_manager' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+          <span class="badge {% if u.role == 'admin' %}bg-purple-100 text-purple-700{% elif u.role == 'manager' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
             {{ u.get_role_display }}
           </span>
         </td>

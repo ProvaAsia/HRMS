@@ -4,8 +4,7 @@ from django.db import models
 
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('super_admin', 'Super Admin'),
-        ('hr_manager', 'HR Manager'),
+        ('admin', 'Admin'),
         ('manager', 'Manager'),
         ('employee', 'Employee'),
     ]
@@ -18,12 +17,17 @@ class User(AbstractUser):
         return f"{self.get_full_name() or self.username} ({self.get_role_display()})"
 
     @property
+    def is_admin(self):
+        return self.role == 'admin'
+
+    # ── backward-compat aliases (templates & views ยังใช้ชื่อเดิมได้) ──
+    @property
     def is_super_admin(self):
-        return self.role == 'super_admin'
+        return self.role == 'admin'
 
     @property
     def is_hr_manager(self):
-        return self.role == 'hr_manager'
+        return False  # role นี้ถูกลบออกแล้ว
 
     @property
     def is_manager(self):
@@ -31,12 +35,13 @@ class User(AbstractUser):
 
     @property
     def is_hr_or_admin(self):
-        return self.role in ('super_admin', 'hr_manager')
+        """เดิมใช้ตรวจ hr_manager | super_admin — ตอนนี้ตรงกับ admin เท่านั้น"""
+        return self.role == 'admin'
 
     @property
     def can_approve(self):
-        """True if this user can approve leave/OT (manager, hr_manager, or super_admin)."""
-        return self.role in ('super_admin', 'hr_manager', 'manager')
+        """Admin และ Manager อนุมัติ leave/OT ได้"""
+        return self.role in ('admin', 'manager')
 
     def get_direct_report_users(self):
         """Return queryset of User objects who report directly to this user."""

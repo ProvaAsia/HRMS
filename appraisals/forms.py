@@ -28,7 +28,7 @@ class AppraisalForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         from accounts.models import User
         self.fields['employee'].queryset = User.objects.filter(is_active=True)
-        self.fields['manager'].queryset = User.objects.filter(role__in=['hr_manager', 'super_admin'])
+        self.fields['manager'].queryset = User.objects.filter(role__in=['admin', 'manager'])
         for f in self.fields.values():
             f.widget.attrs['class'] = CSS
 

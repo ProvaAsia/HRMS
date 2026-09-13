@@ -10,9 +10,9 @@ from .forms import EmployeeProfileForm
 @login_required
 def employee_list(request):
     """
-    super_admin / hr_manager : เห็นทุกคน + มีสิทธิ์แก้ไข
-    manager                  : เห็นแค่ทีมของตัวเอง (read-only)
-    employee                 : redirect ไป my_profile
+    admin    : เห็นทุกคน + มีสิทธิ์แก้ไข
+    manager  : เห็นแค่ทีมของตัวเอง (read-only)
+    employee : redirect ไป my_profile
     """
     user = request.user
 
@@ -81,7 +81,7 @@ def employee_detail(request, pk):
     profile = get_object_or_404(EmployeeProfile, pk=pk)
     user = request.user
 
-    # super_admin / hr_manager → ดูได้ทุกคน
+    # admin → ดูได้ทุกคน
     # manager → ดูได้เฉพาะตัวเองและลูกน้อง
     # employee → ดูได้แค่ตัวเอง
     if user.is_hr_or_admin:
