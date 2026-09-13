@@ -17,14 +17,14 @@ class Migration(migrations.Migration):
                 UPDATE accounts_user
                 SET role = 'manager'
                 WHERE role = 'super_admin'
-                  AND (username = 'wichai' OR first_name ILIKE 'Wichai')
-                  AND last_name ILIKE 'Pongsuwat';
+                  AND (username = 'wichai'
+                       OR (LOWER(first_name) = 'wichai' AND LOWER(last_name) = 'pongsuwat'));
             """,
             reverse_sql="""
                 UPDATE accounts_user
                 SET role = 'super_admin'
-                WHERE (username = 'wichai' OR first_name ILIKE 'Wichai')
-                  AND last_name ILIKE 'Pongsuwat';
+                WHERE (username = 'wichai'
+                       OR (LOWER(first_name) = 'wichai' AND LOWER(last_name) = 'pongsuwat'));
             """,
         ),
     ]
