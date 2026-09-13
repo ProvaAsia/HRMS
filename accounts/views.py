@@ -47,19 +47,35 @@ def dashboard(request):
 
     # ── ข้อมูลที่ทุก role เห็น: วันหยุดบริษัท + ปฏิทินลาตัวเอง ──
     user = request.user
-    from datetime import date as date_cls
+    from datetime import date as date_cls, timedelta
     from attendance.models import CompanyHoliday
     from leave.models import LeaveRequest as LR
 
     today = timezone.localdate()
-    month_start = today.replace(day=1)
-    month_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+
+    # รองรับ ?month=YYYY-MM เพื่อให้เลื่อนดูเดือนได้
+    month_str = request.GET.get('month', '')
+    try:
+        from datetime import datetime as dt_cls
+        cal_date = dt_cls.strptime(month_str, '%Y-%m').date() if month_str else today
+    except ValueError:
+        cal_date = today
+
+    month_start = cal_date.replace(day=1)
+    month_end = cal_date.replace(day=calendar.monthrange(cal_date.year, cal_date.month)[1])
+
+    # ลิงก์เดือนก่อน/ถัดไป
+    prev_month = (month_start - timedelta(days=1)).replace(day=1)
+    next_month = (month_end + timedelta(days=1)).replace(day=1)
+    context['cal_prev'] = prev_month.strftime('%Y-%m')
+    context['cal_next'] = next_month.strftime('%Y-%m')
+    context['cal_is_current'] = (cal_date.year == today.year and cal_date.month == today.month)
 
     # วันหยุดทั้งปี (ทุก role เห็น)
     context['holidays_year'] = list(
-        CompanyHoliday.objects.filter(date__year=today.year).order_by('date')
+        CompanyHoliday.objects.filter(date__year=cal_date.year).order_by('date')
     )
-    context['calendar_month'] = today
+    context['calendar_month'] = cal_date
 
     # ปฏิทินลาส่วนตัวของ user คนนี้ (employee หรือ manager ก็เห็นของตัวเอง)
     my_approved_leaves = LR.objects.filter(
@@ -71,13 +87,13 @@ def dashboard(request):
 
     holidays_this_month = {
         h.date: h for h in CompanyHoliday.objects.filter(
-            date__year=today.year, date__month=today.month
+            date__year=cal_date.year, date__month=cal_date.month
         )
     }
     num_days = month_end.day
     my_days = []
     for day in range(1, num_days + 1):
-        d = date_cls(today.year, today.month, day)
+        d = date_cls(cal_date.year, cal_date.month, day)
         on_leave = [lr for lr in my_approved_leaves if lr.start_date <= d <= lr.end_date]
         my_days.append({
             'date': d,
@@ -107,9 +123,7 @@ def dashboard(request):
                 employee__in=direct_reports, status='pending'
             ).count()
 
-            # Monthly leave calendar — approved leaves this month
-            month_start = today.replace(day=1)
-            month_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+            # Monthly leave calendar — approved leaves for selected month
             approved_leaves = LeaveRequest.objects.filter(
                 employee__in=direct_reports,
                 status='approved',
@@ -119,19 +133,9 @@ def dashboard(request):
 
             # Build calendar days list
             num_days = month_end.day
-            from datetime import date as date_cls
-            from attendance.models import CompanyHoliday
-            holidays_this_month = {
-                h.date: h for h in CompanyHoliday.objects.filter(
-                    date__year=today.year, date__month=today.month
-                )
-            }
-            context['holidays_year'] = list(
-                CompanyHoliday.objects.filter(date__year=today.year).order_by('date')
-            )
             days_data = []
             for day in range(1, num_days + 1):
-                d = date_cls(today.year, today.month, day)
+                d = date_cls(cal_date.year, cal_date.month, day)
                 on_leave = []
                 for lr in approved_leaves:
                     if lr.start_date <= d <= lr.end_date:
@@ -139,7 +143,7 @@ def dashboard(request):
                 holiday = holidays_this_month.get(d)
                 days_data.append({
                     'date': d,
-                    'weekday': d.weekday(),  # 0=Mon,6=Sun
+                    'weekday': d.weekday(),
                     'is_today': d == today,
                     'on_leave': on_leave,
                     'on_leave_extra': max(0, len(on_leave) - 2),
@@ -150,7 +154,6 @@ def dashboard(request):
             empty_prefix = list(range(first_offset))
             context['calendar_days'] = days_data
             context['calendar_empty_prefix'] = empty_prefix
-            context['calendar_month'] = today
 
             # Team attendance today — grouped by department
             PRESENT_STATUSES = {'present', 'late', 'wfh', 'half_day'}
