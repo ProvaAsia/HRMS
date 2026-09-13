@@ -14,8 +14,11 @@
       The file should have columns in this order:
     </p>
     <div class="bg-gray-50 rounded-lg p-3 text-xs font-mono text-gray-600 mb-4">
-      username_or_email | date (YYYY-MM-DD) | clock_in (HH:MM) | clock_out (HH:MM) | status
+      employee_id | date (YYYY-MM-DD) | clock_in (HH:MM) | clock_out (HH:MM) | status
     </div>
+    <p class="text-xs text-gray-400 mb-2">
+      คอลัมน์แรก: <strong>รหัสพนักงาน</strong> (employee_id) — หรือจะใช้ username / email ก็ได้
+    </p>
     <p class="text-xs text-gray-400 mb-6">
       Valid status values: present, late, half_day, absent, wfh, leave. Row 1 is treated as a header and skipped.
     </p>
