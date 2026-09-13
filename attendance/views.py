@@ -468,7 +468,7 @@ def payroll_summary(request):
     from overtime.models import OTRequest
     import calendar
 
-    employees = User.objects.filter(is_active=True, is_superuser=False).order_by('first_name', 'last_name')
+    employees = User.objects.filter(is_active=True, is_superuser=False).select_related('employee_profile').order_by('first_name', 'last_name')
 
     # Pre-fetch attendance aggregates per employee
     att_qs = AttendanceRecord.objects.filter(
@@ -536,8 +536,13 @@ def payroll_summary(request):
         ot_hours = ot_by_emp.get(emp.pk, 0)
         present_days = att.get('present', 0) + att.get('late', 0) + att.get('wfh', 0)
         work_hours = att.get('work_hours', 0)
+        try:
+            emp_code = emp.employee_profile.employee_id or '—'
+        except Exception:
+            emp_code = '—'
         summary.append({
             'emp': emp,
+            'employee_id': emp_code,
             'present_days': present_days,
             'late_days': att.get('late', 0),
             'absent_days': att.get('absent', 0),
@@ -576,7 +581,7 @@ def payroll_export(request):
     year = int(request.GET.get('year', timezone.now().year))
     month = int(request.GET.get('month', timezone.now().month))
 
-    employees = User.objects.filter(is_active=True, is_superuser=False).order_by('first_name', 'last_name')
+    employees = User.objects.filter(is_active=True, is_superuser=False).select_related('employee_profile').order_by('first_name', 'last_name')
 
     att_records = AttendanceRecord.objects.filter(
         date__year=year, date__month=month
@@ -627,7 +632,7 @@ def payroll_export(request):
     )
 
     # Title row
-    ws.merge_cells('A1:K1')
+    ws.merge_cells('A1:L1')
     title_cell = ws['A1']
     title_cell.value = f'สรุปข้อมูลสำหรับคำนวณเงินเดือน — {year}-{month:02d}'
     title_cell.font = Font(bold=True, size=13, color='152057')
@@ -635,7 +640,7 @@ def payroll_export(request):
     ws.row_dimensions[1].height = 28
 
     # Header row
-    headers = ['พนักงาน', 'แผนก', 'มา (วัน)', 'WFH', 'มาสาย', 'ขาด', 'ครึ่งวัน', 'ลา (วัน)', 'ชม.งาน', 'OT (ชม.)', 'ประเภทลา']
+    headers = ['พนักงาน', 'รหัสพนักงาน', 'แผนก', 'มา (วัน)', 'WFH', 'มาสาย', 'ขาด', 'ครึ่งวัน', 'ลา (วัน)', 'ชม.งาน', 'OT (ชม.)', 'ประเภทลา']
     for col, h in enumerate(headers, 1):
         cell = ws.cell(row=2, column=col, value=h)
         cell.font = header_font
@@ -652,9 +657,14 @@ def payroll_export(request):
         ot_hours = ot_by_emp.get(emp.pk, 0)
         present = att.get('present', 0) + att.get('late', 0) + att.get('wfh', 0)
         leave_str = ', '.join(f"{li['leave_type']} {li['days']}ว." for li in leave_items) or '—'
+        try:
+            emp_code = emp.employee_profile.employee_id or '—'
+        except Exception:
+            emp_code = '—'
 
         row_data = [
             emp.get_full_name() or emp.username,
+            emp_code,
             emp.department or '—',
             present,
             att.get('wfh', 0),
@@ -670,12 +680,12 @@ def payroll_export(request):
         for col, val in enumerate(row_data, 1):
             cell = ws.cell(row=row_idx, column=col, value=val)
             cell.border = thin
-            cell.alignment = Alignment(horizontal='center' if col > 2 else 'left', vertical='center')
+            cell.alignment = Alignment(horizontal='left' if col in (1, 3) else 'center', vertical='center')
             if alt_fill:
                 cell.fill = alt_fill
 
     # Column widths
-    col_widths = [22, 16, 9, 7, 7, 7, 9, 9, 10, 10, 40]
+    col_widths = [22, 13, 16, 9, 7, 7, 7, 9, 9, 10, 10, 40]
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
