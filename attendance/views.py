@@ -175,12 +175,12 @@ def import_excel(request):
         excel_file = request.FILES['excel_file']
         try:
             import openpyxl
-            from datetime import datetime, time as dtime
+            from datetime import datetime, time as dtime, date as ddate
             wb = openpyxl.load_workbook(excel_file)
             ws = wb.active
 
-            created = 0
             errors = []
+            records_to_upsert = []
 
             # Pre-load employee lookup caches (avoids N+1 queries)
             try:
@@ -216,6 +216,13 @@ def import_excel(request):
                         pass
                 return None
 
+            def calc_hours(ci, co):
+                if ci and co:
+                    diff = datetime.combine(ddate.today(), co) - datetime.combine(ddate.today(), ci)
+                    if diff.total_seconds() > 0:
+                        return round(diff.total_seconds() / 3600, 2)
+                return 0
+
             valid_statuses = {s for s, _ in AttendanceRecord.STATUS_CHOICES}
 
             # Expected columns: employee_id/username/email, date, clock_in, clock_out, status
@@ -226,35 +233,35 @@ def import_excel(request):
                     username_or_email, date_val, clock_in_val, clock_out_val, status_val = (
                         row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else 'present'
                     )
-
                     employee = resolve_employee(username_or_email)
-
-                    # Parse date
-                    if isinstance(date_val, str):
-                        record_date = datetime.strptime(date_val, '%Y-%m-%d').date()
-                    else:
-                        record_date = date_val  # already a date from Excel
-
+                    record_date = datetime.strptime(date_val, '%Y-%m-%d').date() if isinstance(date_val, str) else date_val
                     clock_in = parse_time(clock_in_val)
                     clock_out = parse_time(clock_out_val)
                     status = (status_val or 'present').strip().lower()
                     if status not in valid_statuses:
                         status = 'present'
-
-                    AttendanceRecord.objects.update_or_create(
+                    records_to_upsert.append(AttendanceRecord(
                         employee=employee,
                         date=record_date,
-                        defaults={
-                            'clock_in': clock_in,
-                            'clock_out': clock_out,
-                            'status': status,
-                        }
-                    )
-                    created += 1
+                        clock_in=clock_in,
+                        clock_out=clock_out,
+                        status=status,
+                        work_hours=calc_hours(clock_in, clock_out),
+                    ))
                 except User.DoesNotExist:
                     errors.append(f"Row {row_num}: user '{row[0]}' not found.")
                 except Exception as e:
                     errors.append(f"Row {row_num}: {e}")
+
+            # Single bulk upsert — uses INSERT ... ON CONFLICT DO UPDATE (no per-row transactions)
+            if records_to_upsert:
+                AttendanceRecord.objects.bulk_create(
+                    records_to_upsert,
+                    update_conflicts=True,
+                    update_fields=['clock_in', 'clock_out', 'status', 'work_hours', 'updated_at'],
+                    unique_fields=['employee', 'date'],
+                )
+            created = len(records_to_upsert)
 
             if errors:
                 for err in errors[:10]:
