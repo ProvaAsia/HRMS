@@ -9,7 +9,7 @@ def migrate_roles_forward(apps, schema_editor):
     """
     User = apps.get_model('accounts', 'User')
     User.objects.filter(role='super_admin').update(role='admin')
-    User.objects.filter(role='hr_manager').update(role='employee')
+    User.objects.filter(role='hr_manager').update(role='manager')
 
 
 def migrate_roles_backward(apps, schema_editor):
