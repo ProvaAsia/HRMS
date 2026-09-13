@@ -468,7 +468,7 @@ def payroll_summary(request):
     from overtime.models import OTRequest
     import calendar
 
-    employees = User.objects.filter(role='employee').order_by('first_name', 'last_name')
+    employees = User.objects.filter(is_active=True, is_superuser=False).order_by('first_name', 'last_name')
 
     # Pre-fetch attendance aggregates per employee
     att_qs = AttendanceRecord.objects.filter(
