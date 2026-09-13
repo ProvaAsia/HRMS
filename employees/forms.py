@@ -16,6 +16,13 @@ class EmployeeProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # แสดง "ชื่อ (username)" แทน "ชื่อ (role)" ใน User Account dropdown
+        # เพราะ Role คือสิทธิ์ใน system ≠ Job Title ในองค์กร
+        from accounts.models import User as UserModel
+        self.fields['user'].queryset = UserModel.objects.all()
+        self.fields['user'].label_from_instance = lambda u: (
+            f"{u.get_full_name() or u.username}  [{u.username}]"
+        )
         for field in self.fields.values():
             if isinstance(field.widget, (forms.TextInput, forms.EmailInput,
                                          forms.NumberInput, forms.Select)):
