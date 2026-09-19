@@ -6,15 +6,21 @@ Usage: python manage.py seed_users
 วาง file นี้ที่: accounts/management/commands/seed_users.py
 """
 
-from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-
-User = get_user_model()
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
 
 DEFAULT_PASSWORD = "Makara2025!"
+
+# role field ใน User model: 'admin', 'manager', 'employee'
+ROLE_MAP = {
+    "superadmin": "admin",
+    "manager":    "manager",
+    "hr_manager": "manager",
+    "employee":   "employee",
+}
 
 USERS = [
     # ── Super Admin ─────────────────────────────────────────────────
@@ -103,6 +109,13 @@ USERS = [
     },
 ]
 
+GROUP_MAP = {
+    "superadmin": "Super Admin",
+    "manager":    "Manager",
+    "hr_manager": "HR Manager",
+    "employee":   "Employee",
+}
+
 
 class Command(BaseCommand):
     help = "Seed initial users for HRMS after database reset"
@@ -111,31 +124,25 @@ class Command(BaseCommand):
         parser.add_argument(
             "--reset",
             action="store_true",
-            help="Delete existing users before seeding (except superusers created outside this command)",
+            help="Delete existing users before seeding",
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
+        User = get_user_model()
+
         if options["reset"]:
             usernames = [u["username"] for u in USERS]
             deleted, _ = User.objects.filter(username__in=usernames).delete()
             self.stdout.write(self.style.WARNING(f"  Deleted {deleted} existing users"))
 
         # Ensure groups exist
-        group_names = ["Super Admin", "Manager", "HR Manager", "Employee"]
         groups = {}
-        for name in group_names:
+        for name in ["Super Admin", "Manager", "HR Manager", "Employee"]:
             group, created = Group.objects.get_or_create(name=name)
             groups[name] = group
             if created:
                 self.stdout.write(f"  Created group: {name}")
-
-        role_to_group = {
-            "superadmin": "Super Admin",
-            "manager":    "Manager",
-            "hr_manager": "HR Manager",
-            "employee":   "Employee",
-        }
 
         created_count = 0
         skipped_count = 0
@@ -148,6 +155,10 @@ class Command(BaseCommand):
                 skipped_count += 1
                 continue
 
+            role_key = data.get("role", "employee")
+            user_role = ROLE_MAP.get(role_key, "employee")
+            group_name = GROUP_MAP.get(role_key, "Employee")
+
             user = User.objects.create_user(
                 username=username,
                 password=DEFAULT_PASSWORD,
@@ -156,11 +167,10 @@ class Command(BaseCommand):
                 email=data.get("email", ""),
                 is_staff=data.get("is_staff", False),
                 is_superuser=data.get("is_superuser", False),
+                role=user_role,
+                department=data.get("department", ""),
             )
 
-            # Assign group
-            role = data.get("role", "employee")
-            group_name = role_to_group.get(role, "Employee")
             user.groups.add(groups[group_name])
 
             # Try to create Employee profile if model exists
@@ -177,11 +187,11 @@ class Command(BaseCommand):
                         "is_active": True,
                     },
                 )
-            except (ImportError, Exception):
-                pass  # Employee model ต่างกันแต่ละ project — ข้ามได้
+            except Exception:
+                pass
 
             self.stdout.write(
-                self.style.SUCCESS(f"  ✓ Created: {username} ({group_name})")
+                self.style.SUCCESS(f"  ✓ Created: {username} (role={user_role}, group={group_name})")
             )
             created_count += 1
 
