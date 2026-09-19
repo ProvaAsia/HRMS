@@ -1,218 +1,764 @@
 {% extends "base.html" %}
-{% block title %}{{ profile.full_name_en|default:profile.employee_id }}{% endblock %}
-{% block page_title %}Employee Profile{% endblock %}
+{% block title %}{{ profile.full_name_en|default:profile.employee_id }} — 360{% endblock %}
+{% block page_title %}
+  <span data-th="ข้อมูลพนักงาน" data-en="Employee Profile">ข้อมูลพนักงาน</span>
+{% endblock %}
 
 {% block top_actions %}
   {% if can_edit %}
   <a href="{% url 'employee_edit' profile.pk %}" class="btn-primary">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-    แก้ไข
+    <span data-th="แก้ไข" data-en="Edit">แก้ไข</span>
   </a>
   {% endif %}
-  <a href="{% url 'employee_list' %}" class="btn-secondary">← ย้อนกลับ</a>
+  <a href="{% url 'employee_list' %}" class="btn-secondary">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    <span class="hidden sm:inline" data-th="ย้อนกลับ" data-en="Back">ย้อนกลับ</span>
+  </a>
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-5">
 
-  <!-- Profile Card (left) -->
-  <div class="lg:col-span-1">
-    <div class="card p-6 text-center">
+<!-- ══ Profile Header ══════════════════════════════════════════════ -->
+<div class="card p-5 mb-4">
+  <div class="flex flex-col sm:flex-row gap-4 items-start">
+
+    <!-- Avatar -->
+    <div class="flex-shrink-0">
       {% if profile.photo %}
-      <img src="{{ profile.photo.url }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4 ring-4 ring-white shadow">
+      <img src="{{ profile.photo.url }}" class="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-md">
       {% else %}
-      <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold ring-4 ring-white shadow" style="background:#152057;color:#fff;">
-        {{ profile.first_name_en.0 }}{{ profile.last_name_en.0 }}
-      </div>
-      {% endif %}
-
-      <h2 class="text-base font-bold text-gray-900 leading-snug">{{ profile.first_name_en }} {{ profile.last_name_en }}</h2>
-      {% if profile.first_name_th %}
-      <p class="text-sm text-gray-500 mt-0.5">{{ profile.first_name_th }} {{ profile.last_name_th }}</p>
-      {% endif %}
-      <p class="text-xs text-gray-400 mt-1">{{ profile.employee_id }}</p>
-
-      <div class="mt-3">
-        <p class="text-sm font-semibold text-blue-700">{{ profile.job_title|default:"—" }}</p>
-        {% if profile.department %}
-        <p class="text-xs text-gray-400 mt-0.5">{{ profile.department.name }}</p>
-        {% endif %}
-      </div>
-
-      <div class="mt-3">
-        <span class="badge bg-green-50 text-green-700">{{ profile.get_employment_type_display }}</span>
-      </div>
-
-      <div class="mt-4 pt-4 border-t border-gray-100 space-y-2 text-sm">
-        <div class="flex justify-between">
-          <span class="text-gray-400">อายุงาน</span>
-          <span class="font-medium">{{ profile.years_of_service }} ปี</span>
-        </div>
-        {% if profile.join_date %}
-        <div class="flex justify-between">
-          <span class="text-gray-400">วันเริ่มงาน</span>
-          <span class="font-medium">{{ profile.join_date|date:"d M Y" }}</span>
-        </div>
-        {% endif %}
-      </div>
-
-      {% if profile.company_email %}
-      <div class="mt-4 pt-4 border-t border-gray-100">
-        <a href="mailto:{{ profile.company_email }}" class="text-xs text-blue-600 hover:underline truncate block">{{ profile.company_email }}</a>
+      <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md" style="background:linear-gradient(135deg,#152057,#2563EB);">
+        {{ profile.first_name_en.0|default:"?" }}{{ profile.last_name_en.0|default:"" }}
       </div>
       {% endif %}
     </div>
+
+    <!-- Name & Tags -->
+    <div class="flex-1 min-w-0">
+      <div class="flex flex-wrap items-center gap-2 mb-1">
+        <span class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ profile.employee_id }}</span>
+        {% if profile.employee_status == 'active' %}
+          <span class="badge" style="background:#DCFCE7;color:#15803D;" data-th="ทำงานอยู่" data-en="Active">ทำงานอยู่</span>
+        {% elif profile.employee_status == 'probation' %}
+          <span class="badge" style="background:#FEF9C3;color:#854D0E;" data-th="ทดลองงาน" data-en="Probation">ทดลองงาน</span>
+        {% else %}
+          <span class="badge" style="background:#FEE2E2;color:#991B1B;">{{ profile.get_employee_status_display }}</span>
+        {% endif %}
+        <span class="badge" style="background:#EFF6FF;color:#1D4ED8;">{{ profile.get_employment_type_display }}</span>
+      </div>
+
+      <h2 class="text-xl font-bold text-gray-900 leading-tight truncate">
+        {% if profile.title_prefix %}{{ profile.get_title_prefix_display }} {% endif %}{{ profile.first_name_th }} {{ profile.last_name_th }}
+        {% if profile.nickname %}<span class="text-base text-gray-400 font-normal ml-1">({{ profile.nickname }})</span>{% endif %}
+      </h2>
+      {% if profile.first_name_en %}
+      <p class="text-sm text-gray-500 mt-0.5">{{ profile.first_name_en }} {{ profile.last_name_en }}</p>
+      {% endif %}
+
+      <div class="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-sm text-gray-500">
+        {% if profile.job_title %}
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          {{ profile.job_title }}{% if profile.job_level %} · {{ profile.job_level }}{% endif %}
+        </span>
+        {% endif %}
+        {% if profile.department %}
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          {{ profile.department.name }}
+        </span>
+        {% endif %}
+        {% if profile.join_date %}
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/></svg>
+          <span data-th="เริ่มงาน" data-en="Joined">เริ่มงาน</span> {{ profile.join_date|date:"d M Y" }}
+          <span class="text-gray-400">({{ profile.years_of_service }} <span data-th="ปี" data-en="yr">ปี</span>)</span>
+        </span>
+        {% endif %}
+        {% if profile.company_email %}
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <a href="mailto:{{ profile.company_email }}" class="text-blue-600 hover:underline truncate max-w-xs">{{ profile.company_email }}</a>
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- KPI mini ring (desktop) -->
+    {% if latest_appraisal and latest_appraisal.manager_rating %}
+    <div class="hidden sm:flex flex-col items-center flex-shrink-0">
+      <div class="relative w-16 h-16">
+        <svg viewBox="0 0 36 36" class="w-16 h-16 -rotate-90">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E5E7EB" stroke-width="3"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2563EB" stroke-width="3"
+            stroke-dasharray="{{ appraisal_score_pct }} {{ 100|add:"-0"|add:appraisal_score_pct }}"
+            stroke-linecap="round"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-sm font-bold text-gray-900">{{ appraisal_score_pct }}%</span>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mt-1" data-th="KPI" data-en="KPI">KPI</p>
+      <p class="text-xs text-gray-500 font-medium">{{ latest_appraisal.cycle.name|truncatechars:12 }}</p>
+    </div>
+    {% endif %}
+
   </div>
+</div>
 
-  <!-- Details (right) -->
-  <div class="lg:col-span-3 space-y-4">
+<!-- ══ Tab Navigation ══════════════════════════════════════════════ -->
+<div class="flex gap-1 mb-4 overflow-x-auto pb-1 scrollbar-hide" style="scrollbar-width:none;">
+  <button onclick="switchTab('overview')" id="tab-overview"
+    class="tab-btn flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+    style="background:#2563EB;color:#fff;">
+    <span data-th="ภาพรวม" data-en="Overview">ภาพรวม</span>
+  </button>
+  <button onclick="switchTab('personal')" id="tab-personal"
+    class="tab-btn flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+    style="background:#F3F4F6;color:#6B7280;">
+    <span data-th="ข้อมูลส่วนตัว" data-en="Personal">ข้อมูลส่วนตัว</span>
+  </button>
+  <button onclick="switchTab('employment')" id="tab-employment"
+    class="tab-btn flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+    style="background:#F3F4F6;color:#6B7280;">
+    <span data-th="งานและตำแหน่ง" data-en="Employment">งานและตำแหน่ง</span>
+  </button>
+  <button onclick="switchTab('documents')" id="tab-documents"
+    class="tab-btn flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+    style="background:#F3F4F6;color:#6B7280;">
+    <span data-th="เอกสาร" data-en="Documents">เอกสาร</span>
+    {% if documents %}<span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(37,99,235,0.15);color:#2563EB;">{{ documents|length }}</span>{% endif %}
+  </button>
+  <button onclick="switchTab('training')" id="tab-training"
+    class="tab-btn flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+    style="background:#F3F4F6;color:#6B7280;">
+    <span data-th="ฝึกอบรม" data-en="Training">ฝึกอบรม</span>
+    {% if training_stats.completed_count %}<span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(37,99,235,0.15);color:#2563EB;">{{ training_stats.completed_count }}</span>{% endif %}
+  </button>
+</div>
 
-    <!-- Organisation -->
+<!-- ══════════════════════════════════════════════════════════════════
+     TAB 1 : ภาพรวม (Overview)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="panel-overview">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <!-- KPI Card -->
+    <div class="card p-5 md:col-span-1">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="ผลประเมิน (KPI)" data-en="Performance (KPI)">ผลประเมิน (KPI)</h3>
+      {% if latest_appraisal %}
+      <div class="flex flex-col items-center gap-3">
+        <div class="relative w-28 h-28">
+          <svg viewBox="0 0 36 36" class="w-28 h-28 -rotate-90">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E5E7EB" stroke-width="2.5"/>
+            <circle cx="18" cy="18" r="15.9" fill="none"
+              stroke="{% if appraisal_score_pct >= 80 %}#16A34A{% elif appraisal_score_pct >= 60 %}#2563EB{% else %}#F59E0B{% endif %}"
+              stroke-width="2.5"
+              stroke-dasharray="{{ appraisal_score_pct }} 100"
+              stroke-linecap="round"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-2xl font-bold text-gray-900">{{ appraisal_score_pct }}%</span>
+            <span class="text-xs text-gray-400">{{ latest_appraisal.manager_rating }}/5</span>
+          </div>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-semibold text-gray-800">
+            {% if appraisal_score_pct >= 80 %}<span class="text-green-600" data-th="ดีมาก" data-en="Excellent">ดีมาก</span>
+            {% elif appraisal_score_pct >= 60 %}<span class="text-blue-600" data-th="ดี" data-en="Good">ดี</span>
+            {% elif appraisal_score_pct >= 40 %}<span class="text-yellow-600" data-th="พอใช้" data-en="Fair">พอใช้</span>
+            {% else %}<span class="text-red-600" data-th="ต้องปรับปรุง" data-en="Needs improvement">ต้องปรับปรุง</span>{% endif %}
+          </p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ latest_appraisal.cycle.name }}</p>
+          <span class="mt-2 inline-block badge text-xs"
+            style="background:#EFF6FF;color:#1D4ED8;">
+            {{ latest_appraisal.get_status_display }}
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <div class="text-center py-8 text-gray-400">
+        <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-width="2"/></svg>
+        <p class="text-sm" data-th="ยังไม่มีผลประเมิน" data-en="No appraisal yet">ยังไม่มีผลประเมิน</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Leave Balance -->
+    <div class="card p-5 md:col-span-2">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-th="วันลาคงเหลือ" data-en="Leave Balance">วันลาคงเหลือ {{ current_year }}</h3>
+        {% if leave_pending_count > 0 %}
+        <span class="badge text-xs" style="background:#FEF9C3;color:#854D0E;">
+          {{ leave_pending_count }} <span data-th="รอการอนุมัติ" data-en="pending">รอการอนุมัติ</span>
+        </span>
+        {% endif %}
+      </div>
+      {% if leave_balances %}
+      <div class="space-y-3">
+        {% for lb in leave_balances %}
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="font-medium text-gray-700">{{ lb.leave_type.name_th|default:lb.leave_type.name }}</span>
+            <span class="text-gray-500 font-mono tabular-nums">
+              {{ lb.used_days|floatformat:1 }} / {{ lb.entitled_days|floatformat:1 }}
+              <span class="text-gray-400 text-xs ml-1" data-th="วัน" data-en="d">วัน</span>
+            </span>
+          </div>
+          <div class="h-1.5 rounded-full overflow-hidden" style="background:#E5E7EB;">
+            {% if lb.entitled_days > 0 %}
+            {% with pct=lb.used_days|add:"0" %}
+            <div class="h-full rounded-full transition-all"
+              style="background:{% if lb.remaining_days <= 0 %}#EF4444{% elif lb.remaining_days <= 2 %}#F59E0B{% else %}#2563EB{% endif %};
+                     width:{% widthratio lb.used_days lb.entitled_days 100 %}%">
+            </div>
+            {% endwith %}
+            {% endif %}
+          </div>
+          <div class="flex justify-end mt-0.5">
+            <span class="text-xs text-gray-400">
+              <span data-th="คงเหลือ" data-en="Remaining">คงเหลือ</span>
+              <span class="font-medium {% if lb.remaining_days <= 0 %}text-red-500{% elif lb.remaining_days <= 2 %}text-yellow-600{% else %}text-green-600{% endif %}">
+                {{ lb.remaining_days|floatformat:1 }}
+              </span>
+              <span data-th="วัน" data-en="d">วัน</span>
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-6 text-gray-400 text-sm" data-th="ยังไม่มีข้อมูลวันลา" data-en="No leave data">ยังไม่มีข้อมูลวันลา</div>
+      {% endif %}
+    </div>
+
+    <!-- Key Documents Summary -->
+    <div class="card p-5 md:col-span-1">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="เอกสารสำคัญ" data-en="Key Documents">เอกสารสำคัญ</h3>
+      {% if documents %}
+      <div class="space-y-2">
+        {% for doc in documents|slice:":5" %}
+        <div class="flex items-center gap-3 py-1">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style="background:{% if doc.is_expired %}#FEE2E2{% else %}#EFF6FF{% endif %}">
+            <svg class="w-4 h-4 {% if doc.is_expired %}text-red-500{% else %}text-blue-600{% endif %}"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">{{ doc.get_doc_type_display }}</p>
+            {% if doc.expiry_date %}
+            <p class="text-xs {% if doc.is_expired %}text-red-500{% else %}text-gray-400{% endif %}">
+              <span data-th="หมดอายุ" data-en="Exp">หมดอายุ</span> {{ doc.expiry_date|date:"d M Y" }}
+            </p>
+            {% endif %}
+          </div>
+          {% if doc.is_expired %}
+          <span class="badge text-xs flex-shrink-0" style="background:#FEE2E2;color:#991B1B;" data-th="หมดอายุ" data-en="Expired">หมดอายุ</span>
+          {% else %}
+          <span class="badge text-xs flex-shrink-0" style="background:#DCFCE7;color:#15803D;" data-th="ปกติ" data-en="Valid">ปกติ</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-6 text-gray-400 text-sm" data-th="ยังไม่มีเอกสาร" data-en="No documents">ยังไม่มีเอกสาร</div>
+      {% endif %}
+    </div>
+
+    <!-- Direct Reports -->
+    {% if subordinates %}
+    <div class="card p-5 md:col-span-2">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+        <span data-th="ทีม" data-en="Team">ทีม</span>
+        <span class="ml-1.5 text-blue-500">({{ subordinates.count }})</span>
+      </h3>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {% for sub in subordinates|slice:":6" %}
+        <a href="{% url 'employee_detail' sub.pk %}"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors group">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+            style="background:linear-gradient(135deg,#3B82F6,#6366F1);">
+            {{ sub.first_name_en.0 }}{{ sub.last_name_en.0 }}
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate group-hover:text-blue-700">{{ sub.first_name_th|default:sub.first_name_en }} {{ sub.last_name_th|default:sub.last_name_en }}</p>
+            <p class="text-xs text-gray-400 truncate">{{ sub.job_title|default:sub.department.name|default:"—" }}</p>
+          </div>
+        </a>
+        {% endfor %}
+        {% if subordinates.count > 6 %}
+        <div class="flex items-center justify-center p-3 text-sm text-gray-400">
+          +{{ subordinates.count|add:"-6" }} <span class="ml-1" data-th="คนอื่น" data-en="more">คนอื่น</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div><!-- /panel-overview -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TAB 2 : ข้อมูลส่วนตัว (Personal Info)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="panel-personal" class="hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- ข้อมูลส่วนตัว -->
     <div class="card p-5">
-      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Organisation</h3>
-      <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Division</dt>
-          <dd class="font-medium text-gray-900">{{ profile.division.name|default:"—" }}</dd>
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="ข้อมูลส่วนตัว" data-en="Personal Details">ข้อมูลส่วนตัว</h3>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="คำนำหน้า" data-en="Prefix">คำนำหน้า</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.get_title_prefix_display|default:"—" }}</dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Department</dt>
-          <dd class="font-medium text-gray-900">{{ profile.department.name|default:"—" }}</dd>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="ชื่อ-สกุล (ไทย)" data-en="Name (TH)">ชื่อ-สกุล (ไทย)</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.first_name_th }} {{ profile.last_name_th }}{% if not profile.first_name_th %}&mdash;{% endif %}</dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Cost Center</dt>
-          <dd class="font-medium text-gray-900">{{ profile.cost_center|default:"—" }}</dd>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="ชื่อ-สกุล (EN)" data-en="Name (EN)">ชื่อ-สกุล (EN)</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.first_name_en }} {{ profile.last_name_en }}{% if not profile.first_name_en %}&mdash;{% endif %}</dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Work Location</dt>
-          <dd class="font-medium text-gray-900">{{ profile.work_location.name|default:"—" }}</dd>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="ชื่อเล่น" data-en="Nickname">ชื่อเล่น</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.nickname|default:"—" }}</dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Direct Manager</dt>
-          <dd class="font-medium text-gray-900">
-            {% if profile.direct_manager %}
-              <a href="{% url 'employee_detail' profile.direct_manager.pk %}" class="text-blue-600 hover:underline">
-                {{ profile.direct_manager.full_name_en }}
-              </a>
+        <div class="flex justify-between gap-4 border-t border-gray-50 pt-3">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="เลขบัตรประชาชน" data-en="National ID">เลขบัตรประชาชน</dt>
+          <dd class="font-medium text-gray-900 text-right font-mono">
+            {% if profile.national_id %}
+              {% if can_edit %}{{ profile.national_id }}{% else %}{{ profile.national_id|slice:":1" }}**-****-*****-**-*{% endif %}
             {% else %}—{% endif %}
           </dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Employment Type</dt>
-          <dd class="font-medium text-gray-900">{{ profile.get_employment_type_display }}</dd>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="วันเกิด" data-en="Date of Birth">วันเกิด</dt>
+          <dd class="font-medium text-gray-900 text-right">
+            {{ profile.date_of_birth|date:"d M Y"|default:"—" }}
+            {% if profile.age %}<span class="text-gray-400 text-xs">({{ profile.age }} <span data-th="ปี" data-en="yrs">ปี</span>)</span>{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="เพศ" data-en="Gender">เพศ</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.get_gender_display|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="สถานภาพสมรส" data-en="Marital Status">สถานภาพสมรส</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.get_marital_status_display|default:"—" }}</dd>
         </div>
       </dl>
     </div>
 
     <!-- Contact -->
     <div class="card p-5">
-      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Contact</h3>
-      <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Company Email</dt>
-          <dd class="font-medium text-gray-900">{{ profile.company_email|default:"—" }}</dd>
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="ช่องทางติดต่อ" data-en="Contact">ช่องทางติดต่อ</h3>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="อีเมลบริษัท" data-en="Company Email">อีเมลบริษัท</dt>
+          <dd class="font-medium text-right">
+            <a href="mailto:{{ profile.company_email }}" class="text-blue-600 hover:underline">{{ profile.company_email|default:"—" }}</a>
+          </dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Personal Email</dt>
-          <dd class="font-medium text-gray-900">{{ profile.personal_email|default:"—" }}</dd>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="อีเมลส่วนตัว" data-en="Personal Email">อีเมลส่วนตัว</dt>
+          <dd class="font-medium text-right">
+            <a href="mailto:{{ profile.personal_email }}" class="text-blue-600 hover:underline">{{ profile.personal_email|default:"—" }}</a>
+          </dd>
         </div>
-        <div>
-          <dt class="text-gray-400 text-xs mb-0.5">Phone</dt>
-          <dd class="font-medium text-gray-900">{{ profile.phone|default:"—" }}</dd>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="เบอร์โทร" data-en="Phone">เบอร์โทร</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.phone|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="จังหวัด" data-en="Province">จังหวัด</dt>
+          <dd class="font-medium text-gray-900 text-right">{{ profile.province|default:"—" }}</dd>
         </div>
         {% if profile.current_address %}
-        <div class="col-span-2 md:col-span-3">
-          <dt class="text-gray-400 text-xs mb-0.5">Address</dt>
-          <dd class="font-medium text-gray-900">{{ profile.current_address }}</dd>
+        <div class="border-t border-gray-50 pt-3">
+          <dt class="text-gray-400 mb-1" data-th="ที่อยู่ปัจจุบัน" data-en="Current Address">ที่อยู่ปัจจุบัน</dt>
+          <dd class="font-medium text-gray-900 leading-relaxed">{{ profile.current_address }}</dd>
+        </div>
+        {% endif %}
+        {% if profile.registered_address %}
+        <div class="border-t border-gray-50 pt-3">
+          <dt class="text-gray-400 mb-1" data-th="ที่อยู่ตามทะเบียน" data-en="Registered Address">ที่อยู่ตามทะเบียน</dt>
+          <dd class="font-medium text-gray-900 leading-relaxed">{{ profile.registered_address }}</dd>
         </div>
         {% endif %}
       </dl>
     </div>
 
     <!-- Emergency Contacts -->
-    {% if profile.emergency_contacts.exists %}
-    <div class="card p-5">
-      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Emergency Contacts</h3>
-      <div class="space-y-2">
+    <div class="card p-5 lg:col-span-2">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="บุคคลติดต่อฉุกเฉิน" data-en="Emergency Contacts">บุคคลติดต่อฉุกเฉิน</h3>
+      {% if profile.emergency_contacts.exists %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {% for ec in profile.emergency_contacts.all %}
-        <div class="flex items-center gap-4 text-sm py-2 border-b border-gray-50 last:border-0">
-          <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold flex-shrink-0">
+        <div class="flex items-center gap-4 p-4 rounded-xl" style="background:#F8FAFC;">
+          <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold flex-shrink-0">
             {{ ec.name.0 }}
           </div>
-          <div class="flex-1">
-            <p class="font-medium text-gray-900">{{ ec.name }}</p>
-            <p class="text-xs text-gray-400">{{ ec.relationship }}</p>
+          <div>
+            <p class="font-semibold text-gray-900">{{ ec.name }}</p>
+            <p class="text-xs text-gray-500">{{ ec.relationship }}</p>
+            <p class="text-sm text-gray-700 mt-0.5">{{ ec.phone }}</p>
           </div>
-          <span class="text-gray-600">{{ ec.phone }}</span>
         </div>
         {% endfor %}
       </div>
-    </div>
-    {% endif %}
-
-    <!-- Dependents -->
-    {% if profile.dependents.exists %}
-    <div class="card p-5">
-      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Dependents</h3>
-      <div class="space-y-2">
-        {% for d in profile.dependents.all %}
-        <div class="flex items-center gap-4 text-sm py-2 border-b border-gray-50 last:border-0">
-          <div class="flex-1">
-            <p class="font-medium text-gray-900">{{ d.name }}</p>
-            <p class="text-xs text-gray-400">{{ d.get_relationship_display }}</p>
-          </div>
-          {% if d.is_tax_deductible %}
-          <span class="badge bg-yellow-50 text-yellow-700 text-xs">Tax deductible</span>
-          {% endif %}
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-  </div>
-</div>
-
-<!-- Your Team (direct reports of this profile) -->
-{% if subordinates %}
-<div class="mt-6">
-  <h3 class="font-semibold text-gray-700 text-sm mb-4">
-    Your Team
-    <span class="ml-2 text-xs font-normal text-gray-400">({{ subordinates.count }} people)</span>
-  </h3>
-  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-    {% for p in subordinates %}
-    <a href="{% url 'employee_detail' p.pk %}"
-       class="card p-4 flex flex-col items-center text-center gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group">
-      {% if p.photo %}
-      <img src="{{ p.photo.url }}"
-           class="w-16 h-16 rounded-2xl object-cover ring-2 ring-gray-100 group-hover:ring-blue-200 transition-all">
       {% else %}
-      <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg"
-           style="background: linear-gradient(135deg, #3B82F6, #6366F1);">
-        {{ p.first_name_en.0 }}{{ p.last_name_en.0 }}
-      </div>
+      <p class="text-sm text-gray-400 text-center py-4" data-th="ยังไม่มีข้อมูลบุคคลติดต่อฉุกเฉิน" data-en="No emergency contacts">ยังไม่มีข้อมูลบุคคลติดต่อฉุกเฉิน</p>
       {% endif %}
-      <div class="w-full">
-        <p class="font-semibold text-gray-900 text-sm leading-tight truncate group-hover:text-blue-700 transition-colors">
-          {{ p.first_name_en }} {{ p.last_name_en }}
-        </p>
-        {% if p.first_name_th %}
-        <p class="text-xs text-gray-400 truncate mt-0.5">{{ p.first_name_th }} {{ p.last_name_th }}</p>
-        {% endif %}
-        {% if p.job_title %}
-        <p class="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-tight">{{ p.job_title }}</p>
-        {% endif %}
-        {% if p.department %}
-        <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">
-          {{ p.department.name }}
-        </span>
-        {% endif %}
-      </div>
-    </a>
-    {% endfor %}
+    </div>
+
   </div>
-</div>
-{% endif %}
+</div><!-- /panel-personal -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TAB 3 : งานและตำแหน่ง (Employment)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="panel-employment" class="hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- Employment Details -->
+    <div class="card p-5">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="ข้อมูลการจ้างงาน" data-en="Employment Details">ข้อมูลการจ้างงาน</h3>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="รหัสพนักงาน" data-en="Employee ID">รหัสพนักงาน</dt>
+          <dd class="font-medium text-gray-900 font-mono">{{ profile.employee_id }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="ประเภทการจ้าง" data-en="Type">ประเภทการจ้าง</dt>
+          <dd class="font-medium text-gray-900">{{ profile.get_employment_type_display }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="สถานะ" data-en="Status">สถานะ</dt>
+          <dd>
+            <span class="badge text-xs"
+              style="background:{% if profile.employee_status == 'active' %}#DCFCE7;color:#15803D{% elif profile.employee_status == 'probation' %}#FEF9C3;color:#854D0E{% else %}#FEE2E2;color:#991B1B{% endif %}">
+              {{ profile.get_employee_status_display }}
+            </span>
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4 border-t border-gray-50 pt-3">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="วันเริ่มงาน" data-en="Join Date">วันเริ่มงาน</dt>
+          <dd class="font-medium text-gray-900">{{ profile.join_date|date:"d M Y"|default:"—" }}</dd>
+        </div>
+        {% if profile.probation_end_date %}
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="ครบทดลองงาน" data-en="Probation End">ครบทดลองงาน</dt>
+          <dd class="font-medium text-gray-900">{{ profile.probation_end_date|date:"d M Y" }}</dd>
+        </div>
+        {% endif %}
+        {% if profile.confirmed_date %}
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="วันที่บรรจุ" data-en="Confirmed">วันที่บรรจุ</dt>
+          <dd class="font-medium text-gray-900">{{ profile.confirmed_date|date:"d M Y" }}</dd>
+        </div>
+        {% endif %}
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="อายุงาน" data-en="Tenure">อายุงาน</dt>
+          <dd class="font-medium text-gray-900">{{ profile.years_of_service }} <span data-th="ปี" data-en="yrs">ปี</span></dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Organisation -->
+    <div class="card p-5">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4" data-th="สังกัด" data-en="Organisation">สังกัด</h3>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="ฝ่าย" data-en="Division">ฝ่าย</dt>
+          <dd class="font-medium text-gray-900">{{ profile.division.name|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="แผนก" data-en="Department">แผนก</dt>
+          <dd class="font-medium text-gray-900">{{ profile.department.name|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="ตำแหน่ง" data-en="Job Title">ตำแหน่ง</dt>
+          <dd class="font-medium text-gray-900">{{ profile.job_title|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="ระดับ" data-en="Level">ระดับ</dt>
+          <dd class="font-medium text-gray-900">{{ profile.job_level|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="Cost Center" data-en="Cost Center">Cost Center</dt>
+          <dd class="font-medium text-gray-900">{{ profile.cost_center|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="สถานที่ทำงาน" data-en="Work Location">สถานที่ทำงาน</dt>
+          <dd class="font-medium text-gray-900">{{ profile.work_location.name|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 border-t border-gray-50 pt-3">
+          <dt class="text-gray-400 flex-shrink-0 w-40" data-th="ผู้บังคับบัญชา" data-en="Manager">ผู้บังคับบัญชา</dt>
+          <dd class="font-medium">
+            {% if profile.direct_manager %}
+            <a href="{% url 'employee_detail' profile.direct_manager.pk %}" class="text-blue-600 hover:underline">
+              {{ profile.direct_manager.full_name_th|default:profile.direct_manager.full_name_en }}
+            </a>
+            {% else %}&mdash;{% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Compensation (HR/Admin only) -->
+    {% if can_see_salary %}
+    <div class="card p-5">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+        <span data-th="ค่าตอบแทน" data-en="Compensation">ค่าตอบแทน</span>
+        <span class="ml-2 text-xs text-yellow-600">
+          <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span data-th="ข้อมูลลับ" data-en="Confidential">ข้อมูลลับ</span>
+        </span>
+      </h3>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="เงินเดือน" data-en="Salary">เงินเดือน</dt>
+          <dd class="font-bold text-gray-900 tabular-nums">
+            {% if profile.salary %}฿{{ profile.salary|floatformat:0 }}{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="ธนาคาร" data-en="Bank">ธนาคาร</dt>
+          <dd class="font-medium text-gray-900">{{ profile.get_bank_name_display|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-gray-400 flex-shrink-0 w-36" data-th="เลขบัญชี" data-en="Account No.">เลขบัญชี</dt>
+          <dd class="font-medium text-gray-900 font-mono">
+            {% if profile.bank_account %}
+              {% if can_edit %}{{ profile.bank_account }}
+              {% else %}***-*-{{ profile.bank_account|slice:"-4:" }}{% endif %}
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+    {% endif %}
+
+    <!-- Direct Reports -->
+    {% if subordinates %}
+    <div class="card p-5 {% if not can_see_salary %}lg:col-span-2{% endif %}">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+        <span data-th="สายบังคับบัญชา" data-en="Direct Reports">สายบังคับบัญชา</span>
+        <span class="ml-1.5 text-blue-500">({{ subordinates.count }})</span>
+      </h3>
+      <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+        {% for sub in subordinates %}
+        <a href="{% url 'employee_detail' sub.pk %}"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors">
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            style="background:linear-gradient(135deg,#3B82F6,#6366F1);">
+            {{ sub.first_name_en.0 }}{{ sub.last_name_en.0 }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">{{ sub.first_name_th|default:sub.first_name_en }} {{ sub.last_name_th|default:sub.last_name_en }}</p>
+            <p class="text-xs text-gray-400 truncate">{{ sub.job_title|default:"—" }} · {{ sub.department.name|default:"" }}</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div><!-- /panel-employment -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TAB 4 : เอกสาร (Documents)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="panel-documents" class="hidden">
+  <div class="card overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-th="เอกสารทั้งหมด" data-en="All Documents">เอกสารทั้งหมด</h3>
+      {% if can_edit %}
+      <span class="text-xs text-blue-600" data-th="(แก้ไขผ่านหน้า Edit)" data-en="(Edit via Edit page)">(แก้ไขผ่านหน้า Edit)</span>
+      {% endif %}
+    </div>
+    {% if documents %}
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr style="background:#F8FAFC;">
+            <th class="table-header text-left" data-th="ประเภท" data-en="Type">ประเภท</th>
+            <th class="table-header text-left" data-th="ชื่อเอกสาร" data-en="Document Name">ชื่อเอกสาร</th>
+            <th class="table-header text-left" data-th="เลขที่" data-en="Number">เลขที่</th>
+            <th class="table-header text-center" data-th="วันที่ออก" data-en="Issue Date">วันที่ออก</th>
+            <th class="table-header text-center" data-th="วันหมดอายุ" data-en="Expiry">วันหมดอายุ</th>
+            <th class="table-header text-center" data-th="สถานะ" data-en="Status">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for doc in documents %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="table-cell">
+              <span class="badge text-xs" style="background:#EFF6FF;color:#1D4ED8;">{{ doc.get_doc_type_display }}</span>
+            </td>
+            <td class="table-cell font-medium text-gray-900">{{ doc.doc_name|default:doc.get_doc_type_display }}</td>
+            <td class="table-cell text-gray-500 font-mono text-sm">{{ doc.doc_number|default:"—" }}</td>
+            <td class="table-cell text-center text-gray-600">{{ doc.issue_date|date:"d M Y"|default:"—" }}</td>
+            <td class="table-cell text-center">
+              {% if doc.expiry_date %}
+              <span class="{% if doc.is_expired %}text-red-600 font-semibold{% else %}text-gray-600{% endif %}">
+                {{ doc.expiry_date|date:"d M Y" }}
+              </span>
+              {% else %}&mdash;{% endif %}
+            </td>
+            <td class="table-cell text-center">
+              {% if doc.is_expired %}
+              <span class="badge text-xs" style="background:#FEE2E2;color:#991B1B;" data-th="หมดอายุ" data-en="Expired">หมดอายุ</span>
+              {% elif doc.status == 'pending' %}
+              <span class="badge text-xs" style="background:#FEF9C3;color:#854D0E;" data-th="รอดำเนินการ" data-en="Pending">รอดำเนินการ</span>
+              {% else %}
+              <span class="badge text-xs" style="background:#DCFCE7;color:#15803D;" data-th="ปกติ" data-en="Normal">ปกติ</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-gray-400">
+      <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="text-sm font-medium" data-th="ยังไม่มีเอกสาร" data-en="No documents yet">ยังไม่มีเอกสาร</p>
+      <p class="text-xs mt-1" data-th="เพิ่มเอกสารผ่านหน้าแก้ไขข้อมูลพนักงาน" data-en="Add documents via the Edit page">เพิ่มเอกสารผ่านหน้าแก้ไขข้อมูลพนักงาน</p>
+    </div>
+    {% endif %}
+  </div>
+</div><!-- /panel-documents -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TAB 5 : ฝึกอบรม (Training)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="panel-training" class="hidden">
+
+  <!-- Stats row -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <div class="card p-4 text-center">
+      <p class="text-2xl font-bold text-blue-600">{{ training_stats.total_hours }}</p>
+      <p class="text-xs text-gray-400 mt-1" data-th="ชั่วโมงรวม" data-en="Total Hours">ชั่วโมงรวม</p>
+    </div>
+    <div class="card p-4 text-center">
+      <p class="text-2xl font-bold text-green-600">{{ training_stats.completed_count }}</p>
+      <p class="text-xs text-gray-400 mt-1" data-th="หลักสูตรที่ผ่าน" data-en="Completed">หลักสูตรที่ผ่าน</p>
+    </div>
+    <div class="card p-4 text-center">
+      <p class="text-2xl font-bold text-purple-600">{{ training_stats.certificate_count }}</p>
+      <p class="text-xs text-gray-400 mt-1" data-th="ใบรับรอง" data-en="Certificates">ใบรับรอง</p>
+    </div>
+    <div class="card p-4 text-center">
+      <p class="text-2xl font-bold text-gray-700">{{ training_enrollments|length }}</p>
+      <p class="text-xs text-gray-400 mt-1" data-th="ทั้งหมด" data-en="Total">ทั้งหมด</p>
+    </div>
+  </div>
+
+  <!-- Training History Table -->
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-th="ประวัติการอบรม" data-en="Training History">ประวัติการอบรม</h3>
+    </div>
+    {% if training_enrollments %}
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr style="background:#F8FAFC;">
+            <th class="table-header text-left" data-th="วันที่" data-en="Date">วันที่</th>
+            <th class="table-header text-left" data-th="หลักสูตร" data-en="Course">หลักสูตร</th>
+            <th class="table-header text-left" data-th="หมวด" data-en="Category">หมวด</th>
+            <th class="table-header text-left" data-th="สถานที่" data-en="Location">สถานที่</th>
+            <th class="table-header text-center" data-th="คะแนน" data-en="Score">คะแนน</th>
+            <th class="table-header text-center" data-th="ผล" data-en="Result">ผล</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for enroll in training_enrollments %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="table-cell text-sm text-gray-500">
+              {{ enroll.training.start_date|date:"d M Y" }}
+              {% if enroll.training.end_date != enroll.training.start_date %}
+              — {{ enroll.training.end_date|date:"d M Y" }}
+              {% endif %}
+            </td>
+            <td class="table-cell">
+              <p class="font-medium text-gray-900">{{ enroll.training.title }}</p>
+              {% if enroll.training.trainer %}
+              <p class="text-xs text-gray-400">{{ enroll.training.trainer }}</p>
+              {% endif %}
+            </td>
+            <td class="table-cell text-gray-500 text-sm">{{ enroll.training.category|default:"—" }}</td>
+            <td class="table-cell text-gray-500 text-sm">{{ enroll.training.location|default:"—" }}</td>
+            <td class="table-cell text-center font-mono tabular-nums">
+              {% if enroll.score %}{{ enroll.score|floatformat:0 }}{% else %}—{% endif %}
+            </td>
+            <td class="table-cell text-center">
+              {% if enroll.status == 'completed' %}
+                {% if enroll.score and enroll.score >= 60 %}
+                <span class="badge text-xs" style="background:#DCFCE7;color:#15803D;" data-th="ผ่าน" data-en="Pass">ผ่าน</span>
+                {% elif enroll.score %}
+                <span class="badge text-xs" style="background:#FEE2E2;color:#991B1B;" data-th="ไม่ผ่าน" data-en="Fail">ไม่ผ่าน</span>
+                {% else %}
+                <span class="badge text-xs" style="background:#DCFCE7;color:#15803D;" data-th="ผ่าน" data-en="Pass">ผ่าน</span>
+                {% endif %}
+              {% elif enroll.status == 'cancelled' %}
+              <span class="badge text-xs" style="background:#F3F4F6;color:#6B7280;" data-th="ยกเลิก" data-en="Cancelled">ยกเลิก</span>
+              {% else %}
+              <span class="badge text-xs" style="background:#EFF6FF;color:#1D4ED8;" data-th="ลงทะเบียน" data-en="Enrolled">ลงทะเบียน</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-gray-400">
+      <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      <p class="text-sm font-medium" data-th="ยังไม่มีประวัติการอบรม" data-en="No training history">ยังไม่มีประวัติการอบรม</p>
+    </div>
+    {% endif %}
+  </div>
+</div><!-- /panel-training -->
+
+
+<!-- ══ Tab switching script ══ -->
+<script>
+var PANELS = ['overview','personal','employment','documents','training'];
+
+function switchTab(name) {
+  PANELS.forEach(function(p) {
+    var panel = document.getElementById('panel-' + p);
+    var btn = document.getElementById('tab-' + p);
+    if (p === name) {
+      panel.classList.remove('hidden');
+      btn.style.background = '#2563EB';
+      btn.style.color = '#fff';
+    } else {
+      panel.classList.add('hidden');
+      btn.style.background = '#F3F4F6';
+      btn.style.color = '#6B7280';
+    }
+  });
+  try { localStorage.setItem('emp360_tab_{{ profile.pk }}', name); } catch(e) {}
+}
+
+// Restore last active tab
+(function() {
+  var saved;
+  try { saved = localStorage.getItem('emp360_tab_{{ profile.pk }}'); } catch(e) {}
+  switchTab(saved && PANELS.indexOf(saved) >= 0 ? saved : 'overview');
+})();
+</script>
 
 {% endblock %}
