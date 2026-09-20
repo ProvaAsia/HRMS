@@ -1,7 +1,8 @@
+import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Sum
 
 from .models import EmployeeProfile, Department, Division
 from .forms import EmployeeProfileForm
@@ -104,10 +105,86 @@ def employee_detail(request, pk):
         direct_manager=profile
     ).select_related('department').order_by('first_name_en')
 
+    employee_user = profile.user
+    current_year = datetime.date.today().year
+
+    # ── Leave balances ─────────────────────────────────────────────────
+    try:
+        from leave.models import LeaveBalance, LeaveRequest
+        leave_balances = LeaveBalance.objects.filter(
+            employee=employee_user,
+            year=current_year,
+        ).select_related('leave_type').exclude(leave_type__is_lwp=True).order_by('leave_type__name')
+
+        leave_pending_count = LeaveRequest.objects.filter(
+            employee=employee_user,
+            status='pending',
+        ).count()
+    except Exception:
+        leave_balances = []
+        leave_pending_count = 0
+
+    # ── Latest appraisal ───────────────────────────────────────────────
+    try:
+        from appraisals.models import Appraisal
+        latest_appraisal = (
+            Appraisal.objects
+            .filter(employee=employee_user)
+            .select_related('cycle')
+            .order_by('-cycle__start_date')
+            .first()
+        )
+        appraisal_score_pct = 0
+        if latest_appraisal and latest_appraisal.manager_rating:
+            appraisal_score_pct = round(float(latest_appraisal.manager_rating) / 5 * 100)
+    except Exception:
+        latest_appraisal = None
+        appraisal_score_pct = 0
+
+    # ── Documents ──────────────────────────────────────────────────────
+    documents = profile.employee_documents.all()
+
+    # ── Training ───────────────────────────────────────────────────────
+    try:
+        from training.models import TrainingEnrollment
+        training_enrollments = (
+            TrainingEnrollment.objects
+            .filter(employee=employee_user)
+            .select_related('training')
+            .order_by('-training__start_date')
+        )
+        completed = training_enrollments.filter(status='completed')
+        total_days = sum(
+            (e.training.end_date - e.training.start_date).days + 1
+            for e in completed
+            if e.training.end_date and e.training.start_date
+        )
+        training_stats = {
+            'total_hours': total_days,
+            'completed_count': completed.count(),
+            'certificate_count': completed.filter(score__isnull=False).count(),
+        }
+    except Exception:
+        training_enrollments = []
+        training_stats = {'total_hours': 0, 'completed_count': 0, 'certificate_count': 0}
+
     return render(request, 'employees/detail.html', {
         'profile': profile,
         'can_edit': can_edit,
+        'can_see_salary': can_edit,
         'subordinates': subordinates,
+        'current_year': current_year,
+        # leave
+        'leave_balances': leave_balances,
+        'leave_pending_count': leave_pending_count,
+        # appraisal
+        'latest_appraisal': latest_appraisal,
+        'appraisal_score_pct': appraisal_score_pct,
+        # documents
+        'documents': documents,
+        # training
+        'training_enrollments': training_enrollments,
+        'training_stats': training_stats,
     })
 
 
@@ -149,11 +226,12 @@ def employee_edit(request, pk):
 
 @login_required
 def employee_my_profile(request):
+    """Redirect ทุก role ไปหน้า employee_detail เต็มรูปแบบ"""
     try:
         profile = request.user.employee_profile
+        return redirect('employee_detail', pk=profile.pk)
     except EmployeeProfile.DoesNotExist:
-        profile = None
-    return render(request, 'employees/my_profile.html', {'profile': profile})
+        return redirect('dashboard')
 
 
 @login_required

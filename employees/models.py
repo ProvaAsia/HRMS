@@ -184,6 +184,13 @@ class EmployeeDocument(models.Model):
     class Meta:
         ordering = ['-issue_date']
 
+    @property
+    def is_expired(self):
+        if self.expiry_date is None:
+            return self.status == 'expired'
+        from django.utils import timezone
+        return self.expiry_date < timezone.now().date()
+
     def __str__(self):
         return f"{self.employee} — {self.get_doc_type_display()} {self.doc_number}"
 
