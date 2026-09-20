@@ -27,7 +27,7 @@
     {% if cycle.description %}<p class="text-sm text-gray-600 line-clamp-2">{{ cycle.description }}</p>{% endif %}
     <div class="text-xs text-gray-500 space-y-1">
       <div>📅 {{ cycle.start_date }} — {{ cycle.end_date }}</div>
-      <div>{{ cycle.appraisal_count }} appraisal{{ cycle.appraisal_count|pluralize }}</div>
+      <div>{{ cycle.filtered_count }} appraisal{{ cycle.filtered_count|pluralize }}</div>
     </div>
     <a href="{% url 'appraisal_cycle_detail' cycle.pk %}" class="btn-secondary w-full justify-center text-xs py-1.5">View Cycle</a>
   </div>

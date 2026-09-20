@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Count, Q
 from .models import AppraisalCycle, Appraisal, Goal
 from .forms import AppraisalCycleForm, AppraisalForm, ManagerAppraisalForm, SelfReviewForm, ManagerReviewForm, GoalForm
 
@@ -9,12 +10,20 @@ from .forms import AppraisalCycleForm, AppraisalForm, ManagerAppraisalForm, Self
 
 @login_required
 def cycle_list(request):
-    cycles = AppraisalCycle.objects.all()
-    # For managers, annotate whether they have appraisals in each cycle
-    # (display remains the same; filtering is in cycle_detail)
+    user = request.user
+    if user.is_hr_or_admin:
+        cycles = AppraisalCycle.objects.annotate(filtered_count=Count('appraisals'))
+    elif user.is_manager:
+        cycles = AppraisalCycle.objects.annotate(
+            filtered_count=Count('appraisals', filter=Q(appraisals__manager=user))
+        )
+    else:
+        cycles = AppraisalCycle.objects.annotate(
+            filtered_count=Count('appraisals', filter=Q(appraisals__employee=user))
+        )
     return render(request, 'appraisals/cycle_list.html', {
         'cycles': cycles,
-        'can_manage': request.user.is_hr_or_admin,
+        'can_manage': user.is_hr_or_admin,
     })
 
 
