@@ -258,6 +258,28 @@ def request_detail(request, pk):
                     )
                     bal.used_days += r.days
                     bal.save()
+                # ── Auto-sync AttendanceRecord ให้ตรงกับวันลาที่อนุมัติ ──────
+                from attendance.models import AttendanceRecord as AR
+                from datetime import timedelta
+                approver_name = r.approved_by.get_full_name() if r.approved_by else 'admin'
+                note = f'ลา {r.leave_type.name} — อนุมัติโดย {approver_name}'
+                cur = r.start_date
+                while cur <= r.end_date:
+                    if cur.weekday() < 5:   # วันทำงาน Mon–Fri เท่านั้น
+                        AR.objects.update_or_create(
+                            employee=r.employee,
+                            date=cur,
+                            defaults={
+                                'status': 'leave',
+                                'clock_in': None,
+                                'clock_out': None,
+                                'work_hours': 0,
+                                'notes': note,
+                            }
+                        )
+                    cur += timedelta(days=1)
+                # ─────────────────────────────────────────────────────────────
+
                 messages.success(request, 'อนุมัติคำขอลาเรียบร้อย')
             else:
                 messages.warning(request, 'ไม่อนุมัติคำขอลา')

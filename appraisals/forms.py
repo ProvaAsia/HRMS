@@ -40,9 +40,14 @@ class ManagerAppraisalForm(forms.ModelForm):
         fields = ['employee']
 
     def __init__(self, *args, **kwargs):
+        manager = kwargs.pop('manager', None)
         super().__init__(*args, **kwargs)
         from accounts.models import User
-        self.fields['employee'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        if manager and not manager.is_hr_or_admin:
+            direct_reports = manager.get_direct_report_users()
+            self.fields['employee'].queryset = direct_reports.order_by('first_name', 'last_name')
+        else:
+            self.fields['employee'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
         for f in self.fields.values():
             f.widget.attrs['class'] = CSS
 

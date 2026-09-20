@@ -59,7 +59,7 @@ def cycle_detail(request, pk):
         appraisals = appraisals.filter(employee=user)
 
     appraisal_form = AppraisalForm() if user.is_hr_or_admin else None
-    manager_appraisal_form = ManagerAppraisalForm() if user.is_manager and not user.is_hr_or_admin else None
+    manager_appraisal_form = ManagerAppraisalForm(manager=user) if user.is_manager and not user.is_hr_or_admin else None
 
     if request.method == 'POST':
         if user.is_hr_or_admin:
@@ -71,7 +71,7 @@ def cycle_detail(request, pk):
                 messages.success(request, 'Appraisal created.')
                 return redirect('appraisal_cycle_detail', pk=pk)
         elif user.is_manager:
-            manager_appraisal_form = ManagerAppraisalForm(request.POST)
+            manager_appraisal_form = ManagerAppraisalForm(request.POST, manager=user)
             if manager_appraisal_form.is_valid():
                 a = manager_appraisal_form.save(commit=False)
                 a.cycle = cycle
