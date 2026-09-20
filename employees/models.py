@@ -121,6 +121,33 @@ class EmployeeProfile(models.Model):
         return delta.days // 365
 
 
+class EmployeeDocument(models.Model):
+    DOC_TYPE_CHOICES = [
+        ('contract', 'สัญญาจ้าง / Employment Contract'),
+        ('id_card', 'บัตรประชาชน / National ID'),
+        ('transcript', 'ใบจบการศึกษา / Transcript'),
+        ('certificate', 'ประกาศนียบัตร / Certificate'),
+        ('medical', 'ผลตรวจสุขภาพ / Medical Certificate'),
+        ('visa', 'วีซ่า / Visa'),
+        ('passport', 'หนังสือเดินทาง / Passport'),
+        ('other', 'อื่นๆ / Other'),
+    ]
+
+    employee = models.ForeignKey(
+        EmployeeProfile, on_delete=models.CASCADE, related_name='documents'
+    )
+    doc_type = models.CharField(max_length=30, choices=DOC_TYPE_CHOICES, default='other')
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to='employee_documents/', null=True, blank=True)
+    issue_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    note = models.TextField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.employee} — {self.get_doc_type_display()} ({self.title})"
+
+
 class EmergencyContact(models.Model):
     employee = models.ForeignKey(
         EmployeeProfile, on_delete=models.CASCADE, related_name='emergency_contacts'
