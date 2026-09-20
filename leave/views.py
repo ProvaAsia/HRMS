@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from ratelimit.decorators import ratelimit
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -166,7 +167,11 @@ def request_list(request):
 
 
 @login_required
+@ratelimit(key="user", rate="20/m", method="POST", block=False)
 def request_create(request):
+    if getattr(request, 'limited', False):
+        from django.http import HttpResponse
+        return HttpResponse('ส่งคำขอบ่อยเกินไป กรุณารอ 1 นาทีแล้วลองใหม่', status=429)
     year = timezone.now().year
     balance_summary = _get_balance_summary(request.user, year)
 

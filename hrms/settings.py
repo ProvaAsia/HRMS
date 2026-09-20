@@ -25,8 +25,20 @@ INSTALLED_APPS = [
     'overtime',
     'attendance',
     'simple_history',
+    'ratelimit',
 ]
 
+
+# ── Rate limiting (django-ratelimit) ─────────────────────────────────────────
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'hrms-ratelimit',
+    }
+}
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',

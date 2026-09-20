@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from ratelimit.decorators import ratelimit
+from ratelimit.exceptions import Ratelimited
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -24,9 +26,13 @@ def _get_client_ip(request):
     return request.META.get('REMOTE_ADDR')
 
 
+@ratelimit(key="ip", rate="10/m", method="POST", block=False)
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
+
+    if getattr(request, 'limited', False):
+        return render(request, 'accounts/rate_limited.html', {'wait': 60}, status=429)
 
     form = LoginForm(request, data=request.POST or None)
     error_msg = None
@@ -370,7 +376,11 @@ def user_change_role(request, pk):
 
 
 @login_required
+@ratelimit(key="ip", rate="10/h", method="POST", block=False)
 def invite_user(request):
+    if getattr(request, 'limited', False):
+        from django.http import HttpResponse
+        return HttpResponse('สร้างบัญชีบ่อยเกินไป กรุณารอ 1 ชั่วโมง', status=429)
     """HR/Admin creates an inactive user and gets a setup link to share."""
     if not request.user.is_hr_or_admin:
         messages.error(request, 'Permission denied.')

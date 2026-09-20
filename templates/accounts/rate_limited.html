@@ -1,0 +1,33 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}ลองใหม่ภายหลัง{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+  <div class="max-w-md w-full text-center">
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+      <!-- Icon -->
+      <div class="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+
+      <h1 class="text-xl font-bold text-gray-800 mb-2">ลองบ่อยเกินไป</h1>
+      <p class="text-sm text-gray-500 mb-6">
+        ตรวจพบการส่งคำขอบ่อยผิดปกติจาก IP ของคุณ<br>
+        กรุณารอ <strong>{{ wait|default:60 }} วินาที</strong> แล้วลองใหม่
+      </p>
+
+      <a href="{% url 'login' %}"
+         class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        กลับหน้าเข้าสู่ระบบ
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
