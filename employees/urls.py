@@ -13,6 +13,10 @@ urlpatterns = [
     path('<int:pk>/document/<int:doc_pk>/delete/', views.document_delete, name='document_delete'),
 
     # ── Master Data ───────────────────────────────────────────
+    path('excel-template/', views_masterdata.employee_excel_template, name='employee_excel_template'),
+    path('excel-export/', views_masterdata.employee_excel_export, name='employee_excel_export'),
+    path('excel-upload/', views_masterdata.employee_excel_upload, name='employee_excel_upload'),
+
     path('masterdata/', views_masterdata.masterdata_overview, name='masterdata_overview'),
     path('masterdata/excel-template/', views_masterdata.masterdata_excel_template, name='masterdata_excel_template'),
     path('masterdata/excel-upload/', views_masterdata.masterdata_excel_upload, name='masterdata_excel_upload'),
