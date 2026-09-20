@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
+import calendar
+from datetime import date
 from .models import AttendanceRecord, AttendanceCorrectionRequest, CompanyHoliday
 from .forms import AttendanceForm, AttendanceAdminForm
 from accounts.models import User
