@@ -259,13 +259,19 @@ def request_detail(request, pk):
                     bal.used_days += r.days
                     bal.save()
                 # ── Auto-sync AttendanceRecord ให้ตรงกับวันลาที่อนุมัติ ──────
-                from attendance.models import AttendanceRecord as AR
+                from attendance.models import AttendanceRecord as AR, CompanyHoliday
                 from datetime import timedelta
                 approver_name = r.approved_by.get_full_name() if r.approved_by else 'admin'
                 note = f'ลา {r.leave_type.name} — อนุมัติโดย {approver_name}'
+                # โหลดวันหยุดนักขัตฤกษ์ในช่วงวันลา
+                holiday_dates = set(
+                    CompanyHoliday.objects.filter(
+                        date__range=(r.start_date, r.end_date)
+                    ).values_list('date', flat=True)
+                )
                 cur = r.start_date
                 while cur <= r.end_date:
-                    if cur.weekday() < 5:   # วันทำงาน Mon–Fri เท่านั้น
+                    if cur.weekday() < 5 and cur not in holiday_dates:
                         AR.objects.update_or_create(
                             employee=r.employee,
                             date=cur,

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
-from .models import AttendanceRecord, AttendanceCorrectionRequest
+from .models import AttendanceRecord, AttendanceCorrectionRequest, CompanyHoliday
 from .forms import AttendanceForm, AttendanceAdminForm
 from accounts.models import User
 
@@ -632,9 +632,15 @@ def payroll_summary(request):
 
     # Build summary rows
     summary = []
+    # วันหยุดนักขัตฤกษ์ในเดือนนั้น
+    holiday_dates = set(
+        CompanyHoliday.objects.filter(date__year=year, date__month=month)
+        .values_list('date', flat=True)
+    )
     working_days = sum(
         1 for d in range(1, calendar.monthrange(year, month)[1] + 1)
-        if calendar.weekday(year, month, d) < 5  # Mon-Fri
+        if calendar.weekday(year, month, d) < 5  # Mon–Fri
+        and date(year, month, d) not in holiday_dates
     )
 
     for emp in employees:
@@ -803,3 +809,42 @@ def payroll_export(request):
     response['Content-Disposition'] = f'attachment; filename="payroll_{year}-{month:02d}.xlsx"'
     wb.save(response)
     return response
+
+
+# ─── Holiday Management (HR only) ─────────────────────────────────────────────
+@login_required
+def holiday_list(request):
+    """HR: view and add/delete public holidays."""
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('attendance_dashboard')
+
+    year = int(request.GET.get('year', timezone.now().year))
+    holidays = CompanyHoliday.objects.filter(date__year=year).order_by('date')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            date_str = request.POST.get('date', '').strip()
+            name = request.POST.get('name', '').strip()
+            name_en = request.POST.get('name_en', '').strip()
+            if date_str and name:
+                from datetime import date as ddate
+                try:
+                    d = ddate.fromisoformat(date_str)
+                    CompanyHoliday.objects.get_or_create(date=d, defaults={'name': name, 'name_en': name_en})
+                    messages.success(request, f'เพิ่มวันหยุด {name} ({d}) เรียบร้อย')
+                except ValueError:
+                    messages.error(request, 'รูปแบบวันที่ไม่ถูกต้อง')
+            else:
+                messages.error(request, 'กรุณากรอกวันที่และชื่อวันหยุด')
+        elif action == 'delete':
+            pk = request.POST.get('pk')
+            CompanyHoliday.objects.filter(pk=pk).delete()
+            messages.success(request, 'ลบวันหยุดเรียบร้อย')
+        return redirect(f'{request.path}?year={year}')
+
+    return render(request, 'attendance/holiday_list.html', {
+        'holidays': holidays,
+        'year': year,
+    })

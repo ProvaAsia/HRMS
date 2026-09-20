@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}วันหยุดนักขัตฤกษ์{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">วันหยุดนักขัตฤกษ์</h1>
+    <div class="flex gap-2">
+      {% if year > 2024 %}<a href="?year={{ year|add:'-1' }}" class="px-3 py-1 rounded border text-sm">‹ {{ year|add:'-1' }}</a>{% endif %}
+      <span class="px-3 py-1 rounded bg-blue-600 text-white text-sm font-semibold">{{ year }}</span>
+      <a href="?year={{ year|add:'1' }}" class="px-3 py-1 rounded border text-sm">{{ year|add:'1' }} ›</a>
+    </div>
+  </div>
+
+  {% include "partials/messages.html" ignore missing %}
+
+  <!-- Add form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">เพิ่มวันหยุด</h2>
+    <form method="post" class="flex flex-wrap gap-3 items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">วันที่</label>
+        <input type="date" name="date" required class="border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">ชื่อวันหยุด (ภาษาไทย)</label>
+        <input type="text" name="name" required placeholder="เช่น วันสงกรานต์" class="border rounded-lg px-3 py-2 text-sm w-48 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">ชื่อภาษาอังกฤษ</label>
+        <input type="text" name="name_en" placeholder="e.g. Songkran" class="border rounded-lg px-3 py-2 text-sm w-40 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">+ เพิ่ม</button>
+    </form>
+  </div>
+
+  <!-- Holiday list -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    {% if holidays %}
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 dark:bg-gray-700">
+        <tr>
+          <th class="text-left px-4 py-3 text-gray-600 dark:text-gray-300 font-semibold">วันที่</th>
+          <th class="text-left px-4 py-3 text-gray-600 dark:text-gray-300 font-semibold">วัน</th>
+          <th class="text-left px-4 py-3 text-gray-600 dark:text-gray-300 font-semibold">ชื่อวันหยุด</th>
+          <th class="text-left px-4 py-3 text-gray-600 dark:text-gray-300 font-semibold">English</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+        {% for h in holidays %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+          <td class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300">{{ h.date }}</td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ h.date|date:"l" }}</td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ h.name }}</td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ h.name_en }}</td>
+          <td class="px-4 py-3 text-right">
+            <form method="post" onsubmit="return confirm('ลบวันหยุดนี้?')">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="pk" value="{{ h.pk }}">
+              <button type="submit" class="text-red-500 hover:text-red-700 text-xs">ลบ</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="px-4 py-2 text-xs text-gray-400 border-t dark:border-gray-700">รวม {{ holidays.count }} วัน</div>
+    {% else %}
+    <div class="py-12 text-center text-gray-400 text-sm">ยังไม่มีวันหยุดนักขัตฤกษ์ในปี {{ year }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

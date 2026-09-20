@@ -23,4 +23,7 @@ urlpatterns = [
     # Payroll summary
     path('payroll/', views.payroll_summary, name='payroll_summary'),
     path('payroll/export/', views.payroll_export, name='payroll_export'),
+
+    # Public holidays
+    path('holidays/', views.holiday_list, name='holiday_list'),
 ]
