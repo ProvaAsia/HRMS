@@ -25,6 +25,17 @@ class UserCreateForm(UserCreationForm):
 
 
 class UserEditForm(forms.ModelForm):
+    new_password1 = forms.CharField(
+        label='New Password',
+        required=False,
+        widget=forms.PasswordInput(attrs={'placeholder': 'Leave blank to keep current password', 'autocomplete': 'new-password'}),
+    )
+    new_password2 = forms.CharField(
+        label='Confirm New Password',
+        required=False,
+        widget=forms.PasswordInput(attrs={'placeholder': 'Repeat new password', 'autocomplete': 'new-password'}),
+    )
+
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'role', 'department', 'position', 'phone']
@@ -34,6 +45,26 @@ class UserEditForm(forms.ModelForm):
         css = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
         for field in self.fields.values():
             field.widget.attrs['class'] = css
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get('new_password1')
+        p2 = cleaned.get('new_password2')
+        if p1 or p2:
+            if p1 != p2:
+                self.add_error('new_password2', 'Passwords do not match.')
+            elif len(p1) < 8:
+                self.add_error('new_password1', 'Password must be at least 8 characters.')
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        new_pw = self.cleaned_data.get('new_password1')
+        if new_pw:
+            user.set_password(new_pw)
+        if commit:
+            user.save()
+        return user
 
 
 CSS = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
