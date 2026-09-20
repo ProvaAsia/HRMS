@@ -9,6 +9,8 @@ urlpatterns = [
     path('create/', views.employee_create, name='employee_create'),
     path('<int:pk>/', views.employee_detail, name='employee_detail'),
     path('<int:pk>/edit/', views.employee_edit, name='employee_edit'),
+    path('<int:pk>/document/add/', views.document_add, name='document_add'),
+    path('<int:pk>/document/<int:doc_pk>/delete/', views.document_delete, name='document_delete'),
 
     # ── Master Data ───────────────────────────────────────────
     path('masterdata/', views_masterdata.masterdata_overview, name='masterdata_overview'),

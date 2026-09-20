@@ -4,8 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Sum
 
-from .models import EmployeeProfile, Department, Division
-from .forms import EmployeeProfileForm
+from .models import EmployeeProfile, EmployeeDocument, Department, Division
+from .forms import EmployeeProfileForm, EmployeeDocumentForm
 
 
 @login_required
@@ -182,6 +182,7 @@ def employee_detail(request, pk):
         'appraisal_score_pct': appraisal_score_pct,
         # documents
         'documents': documents,
+        'doc_form': EmployeeDocumentForm(),
         # training
         'training_enrollments': training_enrollments,
         'training_stats': training_stats,
@@ -251,3 +252,33 @@ def org_chart(request):
     ]
 
     return render(request, 'employees/org_chart.html', {'roots': roots})
+
+
+@login_required
+def document_add(request, pk):
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'ไม่มีสิทธิ์')
+        return redirect('dashboard')
+    profile = get_object_or_404(EmployeeProfile, pk=pk)
+    if request.method == 'POST':
+        form = EmployeeDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.employee = profile
+            doc.save()
+            messages.success(request, 'เพิ่มเอกสารเรียบร้อย')
+        else:
+            messages.error(request, 'กรุณาตรวจสอบข้อมูล: ' + str(form.errors))
+    return redirect('employee_detail', pk=pk)
+
+
+@login_required
+def document_delete(request, pk, doc_pk):
+    if not request.user.is_hr_or_admin:
+        messages.error(request, 'ไม่มีสิทธิ์')
+        return redirect('dashboard')
+    doc = get_object_or_404(EmployeeDocument, pk=doc_pk, employee__pk=pk)
+    if request.method == 'POST':
+        doc.delete()
+        messages.success(request, 'ลบเอกสารเรียบร้อย')
+    return redirect('employee_detail', pk=pk)

@@ -1,5 +1,5 @@
 from django import forms
-from .models import EmployeeProfile, EmergencyContact, Dependent
+from .models import EmployeeProfile, EmployeeDocument, EmergencyContact, Dependent
 from accounts.models import User as UserModel
 
 
@@ -56,3 +56,25 @@ class EmployeeProfileForm(forms.ModelForm):
             profile.user.role = new_role
             profile.user.save(update_fields=['role'])
         return profile
+
+
+class EmployeeDocumentForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeDocument
+        fields = ['doc_type', 'doc_name', 'doc_number', 'issue_date', 'expiry_date', 'status', 'file', 'note']
+        widgets = {
+            'issue_date': forms.DateInput(attrs={'type': 'date'}),
+            'expiry_date': forms.DateInput(attrs={'type': 'date'}),
+            'note': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if isinstance(field.widget, (forms.TextInput, forms.EmailInput,
+                                         forms.NumberInput, forms.Select)):
+                field.widget.attrs.setdefault('class', 'form-input')
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.setdefault('class', 'form-input')
+            elif isinstance(field.widget, forms.DateInput):
+                field.widget.attrs.setdefault('class', 'form-input')
