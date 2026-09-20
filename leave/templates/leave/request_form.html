@@ -72,11 +72,11 @@
         </div>
       </div>
 
-      <!-- Days -->
+      <!-- Days (auto-calculated) -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1" data-th="จำนวนวันทำงาน" data-en="Working Days">จำนวนวันทำงาน</label>
         {{ form.days }}
-        <p class="text-xs text-gray-400 mt-1" data-th="นับเฉพาะวันทำงาน ไม่รวมวันหยุดและเสาร์-อาทิตย์" data-en="Weekdays only, excluding public holidays and weekends">นับเฉพาะวันทำงาน ไม่รวมวันหยุดและเสาร์-อาทิตย์</p>
+        <p class="text-xs text-gray-400 mt-1" data-th="คำนวณอัตโนมัติ (เฉพาะวันจันทร์–ศุกร์)" data-en="Auto-calculated (Mon–Fri only)">คำนวณอัตโนมัติ เมื่อเลือกวันเริ่มต้น–สิ้นสุด (เฉพาะวันจันทร์–ศุกร์)</p>
       </div>
 
       <!-- Reason -->
@@ -258,6 +258,39 @@
   {% if form.medical_certificate.errors or form.instance.pk %}
   if (medSection) medSection.classList.remove('hidden');
   {% endif %}
+
+  // ===== Auto-calculate working days (Mon–Fri) =====
+  const startInput = document.getElementById('id_start_date');
+  const endInput   = document.getElementById('id_end_date');
+
+  function countWorkdays(startStr, endStr) {
+    if (!startStr || !endStr) return null;
+    const s = new Date(startStr), e = new Date(endStr);
+    if (isNaN(s) || isNaN(e) || e < s) return null;
+    let count = 0;
+    const cur = new Date(s);
+    while (cur <= e) {
+      const d = cur.getDay(); // 0=Sun, 6=Sat
+      if (d !== 0 && d !== 6) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }
+
+  function autoFillDays() {
+    if (!startInput || !endInput || !daysInput) return;
+    const days = countWorkdays(startInput.value, endInput.value);
+    if (days !== null && days >= 0) {
+      daysInput.value = days;
+      // Trigger med-cert update since days value changed
+      updateMedCert();
+    }
+  }
+
+  if (startInput) startInput.addEventListener('change', autoFillDays);
+  if (endInput)   endInput.addEventListener('change', autoFillDays);
+  // Auto-fill on load if dates already have values (e.g. form re-render with errors)
+  if (!daysInput || !daysInput.value) autoFillDays();
 })();
 </script>
 {% endblock %}
