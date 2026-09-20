@@ -110,6 +110,11 @@
         {{ form.job_title }}
       </div>
       <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Employee Status</label>
+        {{ form.employee_status }}
+        {% if form.employee_status.errors %}<p class="text-red-500 text-xs mt-1">{{ form.employee_status.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
         {{ form.employment_type }}
       </div>
