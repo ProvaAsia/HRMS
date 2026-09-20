@@ -42,6 +42,10 @@ def _compute_entitled_days(leave_type, join_date, year):
 
     total = base + years_completed * leave_type.annual_accrual
 
+    # จำกัดเพดาน (max_days > 0 = มี cap)
+    if leave_type.max_days > 0:
+        total = min(total, leave_type.max_days)
+
     is_prorated = False
     months_remaining = 12
     if join_date and join_date.year == year:
