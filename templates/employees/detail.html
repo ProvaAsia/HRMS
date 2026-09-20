@@ -285,7 +285,7 @@
           </div>
           <div class="min-w-0">
             <p class="text-sm font-medium text-gray-800 truncate group-hover:text-blue-700">{{ sub.first_name_th|default:sub.first_name_en }} {{ sub.last_name_th|default:sub.last_name_en }}</p>
-            <p class="text-xs text-gray-400 truncate">{{ sub.job_title|default:sub.department.name|default:"—" }}</p>
+            <p class="text-xs text-gray-400 truncate">{% if sub.job_title %}{{ sub.job_title }}{% elif sub.department %}{{ sub.department.name }}{% else %}—{% endif %}</p>
           </div>
         </a>
         {% endfor %}
