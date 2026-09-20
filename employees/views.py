@@ -61,7 +61,12 @@ def employee_list(request):
             return redirect('dashboard')
 
     else:
-        return redirect('employee_my_profile')
+        # Employee ไปที่ profile ตัวเองโดยตรง (หน้า detail เต็ม)
+        try:
+            emp_profile = user.employee_profile
+            return redirect('employee_detail', pk=emp_profile.pk)
+        except EmployeeProfile.DoesNotExist:
+            return redirect('dashboard')
 
 
 @login_required
