@@ -137,3 +137,7 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
 # Public URL used in approval links sent via email
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
+
+# ── Security alerting ──────────────────────────────────────────────────────
+# Email address(es) that receive real-time security alerts (comma-separated)
+SECURITY_ALERT_EMAIL = config('SECURITY_ALERT_EMAIL', default='')

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from hrms.ratelimit import is_rate_limited
+from .alerts import alert_account_locked, alert_ip_brute_force
 from django.http import HttpResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -65,7 +66,16 @@ def login_view(request):
             failures = LoginAttempt.consecutive_failures(username)
             remaining = max(0, LoginAttempt.MAX_FAILURES - failures)
             if LoginAttempt.is_account_locked(username):
+                alert_account_locked(request, username, failures)
                 return render(request, 'accounts/account_locked.html', {'locked_username': username})
+            # IP brute-force alert: many failures from same IP in 10 min
+            ip = _get_client_ip(request)
+            ip_fail_key = f'ip_fails:{ip}'
+            from django.core.cache import cache
+            ip_fails = cache.get(ip_fail_key, 0) + 1
+            cache.set(ip_fail_key, ip_fails, 600)  # 10-minute window
+            if ip_fails >= 10:
+                alert_ip_brute_force(request, ip, ip_fails)
             if remaining <= 2:
                 error_msg = f'รหัสผ่านผิด — เหลืออีก {remaining} ครั้ง บัญชีจะถูกล็อค'
 
