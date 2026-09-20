@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
@@ -8,7 +8,7 @@ from collections import defaultdict
 import calendar
 
 from django.utils import timezone
-from .models import User
+from .models import User, LoginAttempt
 from .forms import LoginForm, UserCreateForm, UserEditForm, InviteUserForm, SetPasswordForm
 from training.models import TrainingProgram, TrainingEnrollment
 from appraisals.models import AppraisalCycle, Appraisal
@@ -17,14 +17,94 @@ from overtime.models import OTRequest
 from attendance.models import AttendanceRecord
 
 
+def _get_client_ip(request):
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded:
+        return x_forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
+
     form = LoginForm(request, data=request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        login(request, form.get_user())
+    error_msg = None
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+
+        # ── Check lockout BEFORE validating credentials ──
+        if LoginAttempt.is_account_locked(username):
+            return render(request, 'accounts/account_locked.html', {'locked_username': username})
+
+        if form.is_valid():
+            user = form.get_user()
+            # Record successful login
+            LoginAttempt.objects.create(
+                username=username,
+                ip_address=_get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:300],
+                success=True,
+            )
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            # Record failed attempt
+            LoginAttempt.objects.create(
+                username=username,
+                ip_address=_get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:300],
+                success=False,
+            )
+            failures = LoginAttempt.consecutive_failures(username)
+            remaining = max(0, LoginAttempt.MAX_FAILURES - failures)
+            if LoginAttempt.is_account_locked(username):
+                return render(request, 'accounts/account_locked.html', {'locked_username': username})
+            if remaining <= 2:
+                error_msg = f'รหัสผ่านผิด — เหลืออีก {remaining} ครั้ง บัญชีจะถูกล็อค'
+
+    return render(request, 'accounts/login.html', {'form': form, 'lockout_warning': error_msg})
+
+
+# ── Admin: locked accounts management ──────────────────────────────────────
+
+@login_required
+def locked_users_view(request):
+    """Show all accounts that are currently locked."""
+    if not request.user.is_admin:
+        messages.error(request, 'Permission denied.')
         return redirect('dashboard')
-    return render(request, 'accounts/login.html', {'form': form})
+
+    # Find usernames with 5+ consecutive failures
+    all_usernames = (
+        LoginAttempt.objects.values_list('username', flat=True).distinct()
+    )
+    locked = [u for u in all_usernames if LoginAttempt.is_account_locked(u)]
+
+    # Enrich with User objects where available
+    user_objs = {u.username: u for u in User.objects.filter(username__in=locked)}
+    locked_list = [
+        {
+            'username': uname,
+            'user': user_objs.get(uname),
+            'failures': LoginAttempt.consecutive_failures(uname),
+        }
+        for uname in locked
+    ]
+    return render(request, 'accounts/locked_users.html', {'locked_list': locked_list})
+
+
+@login_required
+def unlock_user_view(request, username):
+    """Admin clears failed login attempts to unlock the account."""
+    if not request.user.is_admin:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    if request.method == 'POST':
+        LoginAttempt.objects.filter(username=username, success=False).delete()
+        messages.success(request, f'ปลดล็อคบัญชี "{username}" เรียบร้อยแล้ว')
+    return redirect('locked_users')
 
 
 def logout_view(request):

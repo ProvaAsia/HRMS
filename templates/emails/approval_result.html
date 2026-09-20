@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ผลการดำเนินการ — HRMS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f0f4f8;
+           color: #1a202c; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 4px 24px rgba(0,0,0,.08);
+            padding: 48px 40px; max-width: 480px; width: 100%; text-align: center; }
+    .icon { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .icon-ok  { background: #dcfce7; }
+    .icon-err { background: #fee2e2; }
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .detail { font-size: 14px; color: #4a5568; margin: 16px 0 28px; line-height: 1.6; }
+    .btn { display: inline-block; padding: 11px 28px; background: #1e40af; color: #fff;
+           border-radius: 7px; font-size: 14px; font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {% if success %}
+      <div class="icon icon-ok">✅</div>
+      <h2 style="color:#16a34a;">{{ action_label }}เรียบร้อยแล้ว</h2>
+      <p class="detail">{{ detail }}</p>
+    {% else %}
+      <div class="icon icon-err">⚠️</div>
+      <h2 style="color:#dc2626;">ไม่สามารถดำเนินการได้</h2>
+      <p class="detail">{{ message }}</p>
+    {% endif %}
+    <a href="/" class="btn">กลับสู่หน้าหลัก</a>
+  </div>
+</body>
+</html>

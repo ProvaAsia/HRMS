@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -70,3 +71,49 @@ class User(AbstractUser):
         if len(parts) >= 2:
             return (parts[0][0] + parts[-1][0]).upper()
         return self.username[:2].upper()
+
+    @property
+    def is_locked(self):
+        """True if the account is currently locked due to too many failed logins."""
+        return LoginAttempt.is_account_locked(self.username)
+
+    def unlock(self):
+        """Clear failed login attempts so the account becomes accessible again."""
+        LoginAttempt.objects.filter(username=self.username, success=False).delete()
+
+
+class LoginAttempt(models.Model):
+    """Record each login attempt; 5 consecutive failures → account locked."""
+    username = models.CharField(max_length=150, db_index=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=300, blank=True)
+    attempt_time = models.DateTimeField(default=timezone.now, db_index=True)
+    success = models.BooleanField(default=False)
+
+    MAX_FAILURES = 5
+
+    class Meta:
+        ordering = ['-attempt_time']
+
+    def __str__(self):
+        status = 'OK' if self.success else 'FAIL'
+        return f"{self.username} [{status}] @ {self.attempt_time:%Y-%m-%d %H:%M}"
+
+    @classmethod
+    def is_account_locked(cls, username: str) -> bool:
+        """Return True if the last MAX_FAILURES attempts are all failures (no success in between)."""
+        recent = cls.objects.filter(username=username).order_by('-attempt_time')[:cls.MAX_FAILURES]
+        recent = list(recent)
+        if len(recent) < cls.MAX_FAILURES:
+            return False
+        return all(not a.success for a in recent)
+
+    @classmethod
+    def consecutive_failures(cls, username: str) -> int:
+        """Count consecutive failures from the most recent attempt (stops at first success)."""
+        count = 0
+        for attempt in cls.objects.filter(username=username).order_by('-attempt_time')[:cls.MAX_FAILURES]:
+            if attempt.success:
+                break
+            count += 1
+        return count

@@ -12,4 +12,7 @@ urlpatterns = [
     path('accounts/users/<int:pk>/change-role/', views.user_change_role, name='user_change_role'),
     path('accounts/invite/', views.invite_user, name='invite_user'),
     path('accounts/activate/<str:token>/', views.activate_account, name='activate_account'),
+    # Account lockout management
+    path('accounts/locked/', views.locked_users_view, name='locked_users'),
+    path('accounts/unlock/<str:username>/', views.unlock_user_view, name='unlock_user'),
 ]

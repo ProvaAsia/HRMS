@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คำขออนุมัติ — HRMS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f0f4f8; color: #1a202c; }
+    .wrapper { max-width: 600px; margin: 40px auto; }
+    .header { background: #1e40af; color: #fff; padding: 28px 36px; border-radius: 8px 8px 0 0; }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .header p  { font-size: 13px; opacity: .8; }
+    .body { background: #fff; padding: 32px 36px; border: 1px solid #e2e8f0; border-top: 0; }
+    .label { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
+    .value { font-size: 15px; color: #2d3748; margin-bottom: 16px; }
+    .detail-box { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px 20px; margin: 20px 0; }
+    .detail-box p { font-size: 14px; color: #4a5568; line-height: 1.7; }
+    .actions { margin: 28px 0 8px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 12px 28px; border-radius: 6px; font-size: 15px; font-weight: 600;
+           text-decoration: none; text-align: center; min-width: 120px; }
+    .btn-approve { background: #16a34a; color: #fff; }
+    .btn-reject  { background: #dc2626; color: #fff; }
+    .note { font-size: 12px; color: #a0aec0; margin-top: 8px; }
+    .footer { background: #edf2f7; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 8px 8px;
+              padding: 16px 36px; font-size: 12px; color: #718096; text-align: center; }
+    .footer a { color: #4299e1; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>🔔 คำขออนุมัติ{{ request_type }}</h1>
+      <p>HRMS — Human Resource Management System</p>
+    </div>
+    <div class="body">
+      <p class="label">ผู้ยื่นคำขอ</p>
+      <p class="value">{{ requester_name }}</p>
+
+      <div class="detail-box">
+        {% for line in detail_lines %}
+        <p>{{ line }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="actions">
+        <a href="{{ approve_url }}" class="btn btn-approve">✓ อนุมัติ</a>
+        <a href="{{ reject_url }}"  class="btn btn-reject">✗ ปฏิเสธ</a>
+      </div>
+      <p class="note">ลิงก์มีอายุ 72 ชั่วโมง หากหมดอายุกรุณาเข้าสู่ระบบโดยตรง</p>
+    </div>
+    <div class="footer">
+      <a href="{{ site_url }}">{{ site_url }}</a> &nbsp;·&nbsp; อีเมลนี้ส่งโดยอัตโนมัติจากระบบ HRMS
+    </div>
+  </div>
+</body>
+</html>
