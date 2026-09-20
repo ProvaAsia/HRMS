@@ -260,6 +260,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.MIGRATE_HEADING('=== Seed 360 Data ==='))
 
+        self._ensure_profiles()
         self._update_profiles()
         self._create_documents()
         self._seed_leave_balances()
@@ -268,9 +269,43 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('\n✓ seed_360_data completed!'))
 
+    # ── 0. Ensure EmployeeProfile exists for every User ─────────────────────
+    def _ensure_profiles(self):
+        self.stdout.write('\n[0/5] Ensuring EmployeeProfiles exist...')
+        created = 0
+        counter = EmployeeProfile.objects.count()
+        for user in User.objects.all():
+            if hasattr(user, 'employee_profile'):
+                continue
+            # Derive employee_id from PROFILE_DATA or auto-generate
+            data = PROFILE_DATA.get(user.username, {})
+            # Build employee_id: prefer existing key pattern
+            if user.username.startswith('EMP') or user.username[:3].upper() in ('EMP',):
+                emp_id = user.username.upper()
+            else:
+                counter += 1
+                emp_id = f'EMP{counter:03d}'
+            # Try to map username-keyed profile to an EMP id
+            # Look up if any PROFILE_DATA key matches
+            for key in PROFILE_DATA:
+                if key == user.username:
+                    emp_id = user.username  # keep username-style id for ชุดใหม่
+                    break
+
+            EmployeeProfile.objects.create(
+                user=user,
+                employee_id=emp_id,
+                first_name_en=user.first_name or user.username,
+                last_name_en=user.last_name or '',
+                first_name_th='',
+                last_name_th='',
+            )
+            created += 1
+        self.stdout.write(f'  → {created} profile(s) created')
+
     # ── 1. Update EmployeeProfiles ──────────────────────────────────────────
     def _update_profiles(self):
-        self.stdout.write('\n[1/5] Updating EmployeeProfiles...')
+        self.stdout.write('\n[1/6] Updating EmployeeProfiles...')
         profiles = list(EmployeeProfile.objects.select_related('user').all())
         updated = 0
         for profile in profiles:
@@ -317,7 +352,7 @@ class Command(BaseCommand):
 
     # ── 2. EmployeeDocument ─────────────────────────────────────────────────
     def _create_documents(self):
-        self.stdout.write('\n[2/5] Creating EmployeeDocuments...')
+        self.stdout.write('\n[2/6] Creating EmployeeDocuments...')
         profiles = list(EmployeeProfile.objects.all())
         created = 0
         for i, profile in enumerate(profiles):
@@ -345,7 +380,7 @@ class Command(BaseCommand):
 
     # ── 3. LeaveBalance ─────────────────────────────────────────────────────
     def _seed_leave_balances(self):
-        self.stdout.write('\n[3/5] Seeding LeaveBalances...')
+        self.stdout.write('\n[3/6] Seeding LeaveBalances...')
         try:
             from leave.models import LeaveType, LeaveBalance, LeaveRequest
         except ImportError:
@@ -401,7 +436,7 @@ class Command(BaseCommand):
 
     # ── 4. Training ─────────────────────────────────────────────────────────
     def _seed_training(self):
-        self.stdout.write('\n[4/5] Seeding Training...')
+        self.stdout.write('\n[4/6] Seeding Training...')
         try:
             from training.models import TrainingProgram, TrainingEnrollment
         except ImportError:
@@ -454,7 +489,7 @@ class Command(BaseCommand):
 
     # ── 5. Appraisals ───────────────────────────────────────────────────────
     def _seed_appraisals(self):
-        self.stdout.write('\n[5/5] Seeding Appraisals...')
+        self.stdout.write('\n[5/6] Seeding Appraisals...')
         try:
             from appraisals.models import AppraisalCycle, Appraisal, Goal
         except ImportError:
