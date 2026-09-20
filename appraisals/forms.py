@@ -33,6 +33,20 @@ class AppraisalForm(forms.ModelForm):
             f.widget.attrs['class'] = CSS
 
 
+class ManagerAppraisalForm(forms.ModelForm):
+    """Simplified form for managers — manager field is auto-set in the view."""
+    class Meta:
+        model = Appraisal
+        fields = ['employee']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from accounts.models import User
+        self.fields['employee'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        for f in self.fields.values():
+            f.widget.attrs['class'] = CSS
+
+
 class SelfReviewForm(forms.ModelForm):
     class Meta:
         model = Appraisal

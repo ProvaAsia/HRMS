@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import AppraisalCycle, Appraisal, Goal
-from .forms import AppraisalCycleForm, AppraisalForm, SelfReviewForm, ManagerReviewForm, GoalForm
+from .forms import AppraisalCycleForm, AppraisalForm, ManagerAppraisalForm, SelfReviewForm, ManagerReviewForm, GoalForm
 
 
 # ── Cycles ────────────────────────────────────────────────────────────────────
@@ -49,19 +49,33 @@ def cycle_detail(request, pk):
         # Employee sees only their own appraisal
         appraisals = appraisals.filter(employee=user)
 
-    appraisal_form = AppraisalForm()
-    if request.method == 'POST' and user.is_hr_or_admin:
-        appraisal_form = AppraisalForm(request.POST)
-        if appraisal_form.is_valid():
-            a = appraisal_form.save(commit=False)
-            a.cycle = cycle
-            a.save()
-            messages.success(request, 'Appraisal created.')
-            return redirect('appraisal_cycle_detail', pk=pk)
+    appraisal_form = AppraisalForm() if user.is_hr_or_admin else None
+    manager_appraisal_form = ManagerAppraisalForm() if user.is_manager and not user.is_hr_or_admin else None
+
+    if request.method == 'POST':
+        if user.is_hr_or_admin:
+            appraisal_form = AppraisalForm(request.POST)
+            if appraisal_form.is_valid():
+                a = appraisal_form.save(commit=False)
+                a.cycle = cycle
+                a.save()
+                messages.success(request, 'Appraisal created.')
+                return redirect('appraisal_cycle_detail', pk=pk)
+        elif user.is_manager:
+            manager_appraisal_form = ManagerAppraisalForm(request.POST)
+            if manager_appraisal_form.is_valid():
+                a = manager_appraisal_form.save(commit=False)
+                a.cycle = cycle
+                a.manager = user
+                a.save()
+                messages.success(request, 'Appraisal created.')
+                return redirect('appraisal_cycle_detail', pk=pk)
+
     return render(request, 'appraisals/cycle_detail.html', {
         'cycle': cycle,
         'appraisals': appraisals,
         'appraisal_form': appraisal_form,
+        'manager_appraisal_form': manager_appraisal_form,
         'can_manage': user.is_hr_or_admin,
     })
 
