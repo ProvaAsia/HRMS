@@ -31,3 +31,30 @@ class EnrollmentForm(forms.ModelForm):
         self.fields['employee'].queryset = User.objects.filter(is_active=True)
         for f in self.fields.values():
             f.widget.attrs['class'] = CSS
+
+
+class BulkEnrollForm(forms.Form):
+    """Enroll multiple participants at once — by department or by individual selection."""
+    from employees.models import Department
+
+    department = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label='— Select department (optional) —',
+        label='Enroll entire department',
+    )
+    employees = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        label='Or select individual employees',
+        widget=forms.SelectMultiple(attrs={'size': '8'}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from accounts.models import User
+        from employees.models import Department
+        self.fields['department'].queryset = Department.objects.all()
+        self.fields['employees'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        for f in self.fields.values():
+            f.widget.attrs['class'] = CSS

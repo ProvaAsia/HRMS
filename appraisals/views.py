@@ -88,7 +88,7 @@ def appraisal_detail(request, pk):
                 manager_form.save()
                 messages.success(request, 'Manager review saved.')
                 return redirect('appraisal_detail', pk=pk)
-        elif 'goal_submit' in request.POST:
+        elif 'goal_submit' in request.POST and (is_employee or is_manager):
             goal_form = GoalForm(request.POST)
             if goal_form.is_valid():
                 g = goal_form.save(commit=False)
@@ -107,7 +107,9 @@ def appraisal_detail(request, pk):
 @login_required
 def goal_update(request, pk):
     goal = get_object_or_404(Goal, pk=pk)
-    if goal.appraisal.employee != request.user and not request.user.is_hr_or_admin:
+    is_employee = goal.appraisal.employee == request.user
+    is_manager = goal.appraisal.manager == request.user or request.user.is_hr_or_admin
+    if not (is_employee or is_manager):
         messages.error(request, 'Permission denied.')
         return redirect('appraisal_cycle_list')
     form = GoalForm(request.POST or None, instance=goal)
@@ -122,6 +124,11 @@ def goal_update(request, pk):
 def goal_delete(request, pk):
     goal = get_object_or_404(Goal, pk=pk)
     appraisal_pk = goal.appraisal.pk
+    is_employee = goal.appraisal.employee == request.user
+    is_manager = goal.appraisal.manager == request.user or request.user.is_hr_or_admin
+    if not (is_employee or is_manager):
+        messages.error(request, 'Permission denied.')
+        return redirect('appraisal_cycle_list')
     if request.method == 'POST':
         goal.delete()
         messages.success(request, 'Goal deleted.')
