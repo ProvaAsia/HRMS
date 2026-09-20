@@ -10,7 +10,12 @@ from .forms import AppraisalCycleForm, AppraisalForm, SelfReviewForm, ManagerRev
 @login_required
 def cycle_list(request):
     cycles = AppraisalCycle.objects.all()
-    return render(request, 'appraisals/cycle_list.html', {'cycles': cycles})
+    # For managers, annotate whether they have appraisals in each cycle
+    # (display remains the same; filtering is in cycle_detail)
+    return render(request, 'appraisals/cycle_list.html', {
+        'cycles': cycles,
+        'can_manage': request.user.is_hr_or_admin,
+    })
 
 
 @login_required
@@ -32,8 +37,20 @@ def cycle_create(request):
 def cycle_detail(request, pk):
     cycle = get_object_or_404(AppraisalCycle, pk=pk)
     appraisals = cycle.appraisals.select_related('employee', 'manager').all()
+
+    user = request.user
+    if user.is_hr_or_admin:
+        # Admin sees everyone
+        pass
+    elif user.is_manager:
+        # Manager sees only appraisals they are assigned as manager
+        appraisals = appraisals.filter(manager=user)
+    else:
+        # Employee sees only their own appraisal
+        appraisals = appraisals.filter(employee=user)
+
     appraisal_form = AppraisalForm()
-    if request.method == 'POST' and request.user.is_hr_or_admin:
+    if request.method == 'POST' and user.is_hr_or_admin:
         appraisal_form = AppraisalForm(request.POST)
         if appraisal_form.is_valid():
             a = appraisal_form.save(commit=False)
@@ -42,7 +59,10 @@ def cycle_detail(request, pk):
             messages.success(request, 'Appraisal created.')
             return redirect('appraisal_cycle_detail', pk=pk)
     return render(request, 'appraisals/cycle_detail.html', {
-        'cycle': cycle, 'appraisals': appraisals, 'appraisal_form': appraisal_form
+        'cycle': cycle,
+        'appraisals': appraisals,
+        'appraisal_form': appraisal_form,
+        'can_manage': user.is_hr_or_admin,
     })
 
 
