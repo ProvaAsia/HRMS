@@ -25,13 +25,9 @@ INSTALLED_APPS = [
     'overtime',
     'attendance',
     'simple_history',
-    'ratelimit',
 ]
 
 
-# ── Rate limiting (django-ratelimit) ─────────────────────────────────────────
-RATELIMIT_ENABLE = True
-RATELIMIT_USE_CACHE = 'default'
 
 CACHES = {
     'default': {

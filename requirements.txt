@@ -7,4 +7,3 @@ gunicorn==22.0.0
 whitenoise==6.7.0
 openpyxl>=3.1.0
 django-simple-history==3.7.0
-django-ratelimit==4.1.0

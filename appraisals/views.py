@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from ratelimit.decorators import ratelimit
+from hrms.ratelimit import is_rate_limited
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
@@ -107,10 +108,8 @@ def cycle_edit(request, pk):
 # ── Appraisals ────────────────────────────────────────────────────────────────
 
 @login_required
-@ratelimit(key="user", rate="30/m", method="POST", block=False)
 def appraisal_detail(request, pk):
-    if getattr(request, 'limited', False):
-        from django.http import HttpResponse
+    if is_rate_limited(request, key='user', rate='30/m', method='POST'):
         return HttpResponse('ส่งข้อมูลบ่อยเกินไป กรุณารอสักครู่', status=429)
     appraisal = get_object_or_404(Appraisal, pk=pk)
     goals = appraisal.goals.all()
