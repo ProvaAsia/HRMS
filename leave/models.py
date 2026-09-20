@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from datetime import date, timedelta
+from simple_history.models import HistoricalRecords
 
 
 class LeaveType(models.Model):
@@ -17,6 +18,8 @@ class LeaveType(models.Model):
     carry_over = models.BooleanField(default=False)
     description = models.TextField(blank=True)
 
+    history = HistoricalRecords()
+
     def __str__(self):
         return self.name
 
@@ -29,6 +32,8 @@ class LeaveBalance(models.Model):
     year = models.IntegerField(default=2026)
     entitled_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
     used_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+
+    history = HistoricalRecords()
 
     class Meta:
         unique_together = ['employee', 'leave_type', 'year']
@@ -86,6 +91,8 @@ class LeaveRequest(models.Model):
     review_comment = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-created_at']
