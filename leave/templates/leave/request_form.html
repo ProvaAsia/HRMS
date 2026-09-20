@@ -25,7 +25,7 @@
 
   <!-- Form Card -->
   <div class="card p-6">
-    <form method="post" enctype="multipart/form-data" class="space-y-5" id="leave-form">
+    <form method="post" class="space-y-5" id="leave-form">
       {% csrf_token %}
 
       <!-- Leave Type -->
@@ -88,21 +88,19 @@
       <!-- Medical Certificate (shown only for Sick Leave) -->
       <div id="med-cert-section" class="hidden">
         <label class="block text-sm font-medium text-gray-700 mb-1" id="med-cert-label"
-               data-th="ใบรับรองแพทย์" data-en="Medical Certificate">ใบรับรองแพทย์</label>
-        {{ form.medical_certificate }}
-        <p class="text-xs text-gray-400 mt-1" id="med-cert-hint"
-           data-th="ไฟล์ PDF หรือรูปภาพ (ขนาดไม่เกิน 5MB)" data-en="PDF or image file (max 5MB)">
-          ไฟล์ PDF หรือรูปภาพ (ขนาดไม่เกิน 5MB)
+               data-th="ชื่อไฟล์ใบรับรองแพทย์" data-en="Medical Certificate Name">ชื่อไฟล์ใบรับรองแพทย์</label>
+        {{ form.medical_cert_name }}
+        <p class="text-xs text-gray-400 mt-1" id="med-cert-hint">
+          ระบุชื่อไฟล์ เช่น <em>ใบรับรองแพทย์_รพ.ศิริราช_2566.pdf</em> — HR จะอัปโหลดไฟล์จริงใน SharePoint
         </p>
-        <!-- Required warning (shows when days > 3) -->
         <div id="med-cert-required-badge" class="hidden mt-1.5 flex items-center gap-1.5 text-xs font-medium text-red-600">
           <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
           </svg>
-          <span data-th="ลาป่วยเกิน 3 วัน ต้องแนบใบรับรองแพทย์" data-en="Required for sick leave over 3 days">ลาป่วยเกิน 3 วัน ต้องแนบใบรับรองแพทย์</span>
+          <span data-th="ลาป่วยเกิน 3 วัน ต้องระบุชื่อไฟล์ใบรับรองแพทย์" data-en="Required for sick leave over 3 days">ลาป่วยเกิน 3 วัน ต้องระบุชื่อไฟล์ใบรับรองแพทย์</span>
         </div>
-        {% if form.medical_certificate.errors %}
-        <p class="text-xs text-red-600 mt-1">{{ form.medical_certificate.errors.0 }}</p>
+        {% if form.medical_cert_name.errors %}
+        <p class="text-xs text-red-600 mt-1">{{ form.medical_cert_name.errors.0 }}</p>
         {% endif %}
       </div>
 
@@ -226,7 +224,7 @@
   const medLabel    = document.getElementById('med-cert-label');
   const medBadge    = document.getElementById('med-cert-required-badge');
   const daysInput   = document.getElementById('id_days');
-  const medInput    = document.getElementById('id_medical_certificate');
+  const medInput    = document.getElementById('id_medical_cert_name');
 
   function updateMedCert() {
     if (!sel || !sickLeaveId) return;
@@ -255,7 +253,7 @@
   updateMedCert();
 
   // If form was submitted with errors, keep cert section visible
-  {% if form.medical_certificate.errors or form.instance.pk %}
+  {% if form.medical_cert_name.errors or form.instance.pk %}
   if (medSection) medSection.classList.remove('hidden');
   {% endif %}
 

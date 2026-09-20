@@ -131,7 +131,7 @@ class EmployeeProfile(models.Model):
     )
 
     # Photo
-    photo = models.ImageField(upload_to='employee_photos/', null=True, blank=True)
+    photo_url = models.URLField(blank=True, help_text='URL รูปภาพพนักงาน (SharePoint public link หรือ URL อื่น)')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -180,7 +180,7 @@ class EmployeeDocument(models.Model):
     issue_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    file = models.FileField(upload_to='employee_documents/%Y/', null=True, blank=True)
+    file_sharepoint_url = models.URLField(blank=True, help_text='SharePoint URL ของไฟล์เอกสาร — เข้าได้เฉพาะ HR/Admin')
     note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

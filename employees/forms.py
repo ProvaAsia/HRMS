@@ -61,7 +61,7 @@ class EmployeeProfileForm(forms.ModelForm):
 class EmployeeDocumentForm(forms.ModelForm):
     class Meta:
         model = EmployeeDocument
-        fields = ['doc_type', 'doc_name', 'doc_number', 'issue_date', 'expiry_date', 'status', 'file', 'note']
+        fields = ['doc_type', 'doc_name', 'doc_number', 'issue_date', 'expiry_date', 'status', 'file_sharepoint_url', 'note']
         widgets = {
             'issue_date': forms.DateInput(attrs={'type': 'date'}),
             'expiry_date': forms.DateInput(attrs={'type': 'date'}),

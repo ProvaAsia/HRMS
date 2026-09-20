@@ -82,7 +82,7 @@ def candidate_create(request):
     if not request.user.is_hr_or_admin:
         messages.error(request, 'Permission denied.')
         return redirect('candidate_list')
-    form = CandidateForm(request.POST or None, request.FILES or None)
+    form = CandidateForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Candidate added.')
@@ -114,7 +114,7 @@ def candidate_edit(request, pk):
         messages.error(request, 'Permission denied.')
         return redirect('candidate_list')
     candidate = get_object_or_404(Candidate, pk=pk)
-    form = CandidateForm(request.POST or None, request.FILES or None, instance=candidate)
+    form = CandidateForm(request.POST or None, instance=candidate)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Candidate updated.')

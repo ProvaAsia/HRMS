@@ -19,7 +19,7 @@ class JobPositionForm(forms.ModelForm):
 class CandidateForm(forms.ModelForm):
     class Meta:
         model = Candidate
-        fields = ['first_name', 'last_name', 'email', 'phone', 'job_position', 'status', 'resume', 'notes']
+        fields = ['first_name', 'last_name', 'email', 'phone', 'job_position', 'status', 'resume_name', 'resume_sharepoint_url', 'notes']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

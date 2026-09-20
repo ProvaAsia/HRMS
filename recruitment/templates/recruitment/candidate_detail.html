@@ -29,8 +29,21 @@
         <div><dt class="text-gray-500">Applied For</dt><dd class="font-medium">{{ candidate.job_position.title }}</dd></div>
         <div><dt class="text-gray-500">Applied</dt><dd>{{ candidate.applied_at|date:"d M Y" }}</dd></div>
       </dl>
-      {% if candidate.resume %}
-      <a href="{{ candidate.resume.url }}" class="btn-secondary w-full justify-center mt-4 text-xs" target="_blank">Download Resume</a>
+      {% if candidate.resume_name %}
+      <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <p class="text-xs text-gray-500 mb-1">Resume</p>
+        {% if request.user.is_hr_or_admin and candidate.resume_sharepoint_url %}
+        <a href="{{ candidate.resume_sharepoint_url }}" target="_blank"
+           class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline font-medium">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+          {{ candidate.resume_name }}
+        </a>
+        {% else %}
+        <span class="text-sm text-gray-700">{{ candidate.resume_name }}</span>
+        {% endif %}
+      </div>
       {% endif %}
     </div>
     {% if candidate.notes %}

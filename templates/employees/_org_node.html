@@ -4,8 +4,8 @@
   <!-- Card -->
   <a href="{% url 'employee_detail' node.profile.pk %}" class="oc-card {% if depth == 0 %}oc-root{% endif %}">
     <div class="oc-avatar">
-      {% if node.profile.photo %}
-        <img src="{{ node.profile.photo.url }}" alt="">
+      {% if node.profile.photo_url %}
+        <img src="{{ node.profile.photo_url }}" alt="">
       {% else %}
         {{ node.profile.first_name_en.0 }}{{ node.profile.last_name_en.0 }}
       {% endif %}

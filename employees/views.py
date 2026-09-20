@@ -194,7 +194,7 @@ def employee_create(request):
     if not request.user.is_hr_or_admin:
         messages.error(request, 'ไม่มีสิทธิ์')
         return redirect('dashboard')
-    form = EmployeeProfileForm(request.POST or None, request.FILES or None)
+    form = EmployeeProfileForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'สร้างข้อมูลพนักงานเรียบร้อย')
@@ -212,7 +212,7 @@ def employee_edit(request, pk):
         messages.error(request, 'ไม่มีสิทธิ์แก้ไขข้อมูล')
         return redirect('dashboard')
     profile = get_object_or_404(EmployeeProfile, pk=pk)
-    form = EmployeeProfileForm(request.POST or None, request.FILES or None, instance=profile)
+    form = EmployeeProfileForm(request.POST or None, instance=profile)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'อัปเดตข้อมูลเรียบร้อย')
@@ -261,7 +261,7 @@ def document_add(request, pk):
         return redirect('dashboard')
     profile = get_object_or_404(EmployeeProfile, pk=pk)
     if request.method == 'POST':
-        form = EmployeeDocumentForm(request.POST, request.FILES)
+        form = EmployeeDocumentForm(request.POST)
         if form.is_valid():
             doc = form.save(commit=False)
             doc.employee = profile

@@ -200,7 +200,7 @@ def request_create(request):
     except Exception:
         pass
 
-    form = LeaveRequestForm(request.POST or None, request.FILES or None)
+    form = LeaveRequestForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         req = form.save(commit=False)
         req.employee = request.user

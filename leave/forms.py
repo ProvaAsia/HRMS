@@ -7,7 +7,8 @@ CSS = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-
 class LeaveRequestForm(forms.ModelForm):
     class Meta:
         model = LeaveRequest
-        fields = ['leave_type', 'start_date', 'end_date', 'days', 'reason', 'medical_certificate']
+        fields = ['leave_type', 'start_date', 'end_date', 'days', 'reason',
+                  'medical_cert_name', 'medical_cert_sharepoint_url']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
@@ -17,24 +18,19 @@ class LeaveRequestForm(forms.ModelForm):
         self.sick_leave_id = kwargs.pop('sick_leave_id', None)
         super().__init__(*args, **kwargs)
         for name, f in self.fields.items():
-            if name == 'medical_certificate':
-                f.widget.attrs['class'] = (
-                    'w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 '
-                    'file:rounded-lg file:border-0 file:text-xs file:font-medium '
-                    'file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 '
-                    'border border-gray-300 rounded-lg px-2 py-1.5'
-                )
-                f.required = False
-            else:
-                f.widget.attrs['class'] = CSS
+            f.widget.attrs['class'] = CSS
+        self.fields['medical_cert_name'].label = 'ชื่อไฟล์ใบรับรองแพทย์'
+        self.fields['medical_cert_name'].required = False
+        self.fields['medical_cert_sharepoint_url'].label = 'SharePoint URL (HR เท่านั้น)'
+        self.fields['medical_cert_sharepoint_url'].required = False
+        self.fields['medical_cert_sharepoint_url'].widget.attrs['placeholder'] = 'วาง SharePoint link ที่นี่'
 
     def clean(self):
         cleaned_data = super().clean()
         leave_type = cleaned_data.get('leave_type')
         days = cleaned_data.get('days')
-        cert = cleaned_data.get('medical_certificate')
+        cert_name = cleaned_data.get('medical_cert_name', '').strip()
 
-        # Check if this is a sick leave type (by name contains ป่วย or Sick)
         is_sick = False
         if leave_type:
             name_lower = leave_type.name.lower()
@@ -42,10 +38,10 @@ class LeaveRequestForm(forms.ModelForm):
             is_sick = 'sick' in name_lower or 'ป่วย' in name_th or 'ป่วย' in name_lower
 
         if is_sick and days and days > 3:
-            if not cert and not self.files.get('medical_certificate'):
+            if not cert_name:
                 self.add_error(
-                    'medical_certificate',
-                    'ลาป่วยเกิน 3 วัน ต้องแนบใบรับรองแพทย์'
+                    'medical_cert_name',
+                    'ลาป่วยเกิน 3 วัน ต้องระบุชื่อไฟล์ใบรับรองแพทย์'
                 )
         return cleaned_data
 

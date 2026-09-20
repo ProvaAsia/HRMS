@@ -67,11 +67,8 @@ class LeaveRequest(models.Model):
     end_date = models.DateField()
     days = models.DecimalField(max_digits=4, decimal_places=1)
     reason = models.TextField(blank=True)
-    medical_certificate = models.FileField(
-        upload_to='medical_certs/%Y/%m/',
-        null=True, blank=True,
-        help_text="ใบรับรองแพทย์ — บังคับสำหรับลาป่วยเกิน 3 วัน"
-    )
+    medical_cert_name = models.CharField(max_length=255, blank=True, help_text='ชื่อไฟล์ใบรับรองแพทย์ (แสดงให้พนักงานเห็น)')
+    medical_cert_sharepoint_url = models.URLField(blank=True, help_text='SharePoint URL — เข้าได้เฉพาะ HR/Admin')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     # New fields

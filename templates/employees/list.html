@@ -43,8 +43,8 @@
      data-th="โปรไฟล์ของคุณ" data-en="Your Profile">โปรไฟล์ของคุณ</p>
   <div class="flex items-center gap-5">
     <!-- Avatar -->
-    {% if mgr_profile.photo %}
-    <img src="{{ mgr_profile.photo.url }}"
+    {% if mgr_profile.photo_url %}
+    <img src="{{ mgr_profile.photo_url }}"
          class="w-20 h-20 rounded-2xl object-cover ring-2 ring-blue-100 flex-shrink-0">
     {% else %}
     <div class="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
@@ -106,8 +106,8 @@
      class="card p-4 flex flex-col items-center text-center gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group">
 
     <!-- Avatar -->
-    {% if p.photo %}
-    <img src="{{ p.photo.url }}"
+    {% if p.photo_url %}
+    <img src="{{ p.photo_url }}"
          class="w-16 h-16 rounded-2xl object-cover ring-2 ring-gray-100 group-hover:ring-blue-200 transition-all">
     {% else %}
     <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg group-hover:opacity-90 transition-opacity"
@@ -199,8 +199,8 @@
           <td class="table-cell font-mono text-xs">{{ p.employee_id }}</td>
           <td class="table-cell">
             <div class="flex items-center gap-3">
-              {% if p.photo %}
-              <img src="{{ p.photo.url }}" class="w-8 h-8 rounded-full object-cover">
+              {% if p.photo_url %}
+              <img src="{{ p.photo_url }}" class="w-8 h-8 rounded-full object-cover">
               {% else %}
               <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
                 {{ p.first_name_en.0 }}{{ p.last_name_en.0 }}

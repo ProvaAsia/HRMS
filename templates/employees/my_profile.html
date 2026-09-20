@@ -9,8 +9,8 @@
   <!-- Profile Card -->
   <div class="lg:col-span-1">
     <div class="card p-6 text-center">
-      {% if profile.photo %}
-      <img src="{{ profile.photo.url }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4 ring-4 ring-white shadow">
+      {% if profile.photo_url %}
+      <img src="{{ profile.photo_url }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4 ring-4 ring-white shadow">
       {% else %}
       <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold ring-4 ring-white shadow" style="background:#152057;color:#fff;">
         {{ user.initials }}
