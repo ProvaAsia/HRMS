@@ -11,34 +11,40 @@ def ot_request_created(sender, instance, created, **kwargs):
     if not created or instance.status != 'pending':
         return
 
-    from hrms.email_utils import build_approval_urls, send_approval_email
-    from accounts.models import User
+    try:
 
-    site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-    approve_url, reject_url = build_approval_urls(instance, 'ot', site_url)
+        from hrms.email_utils import build_approval_urls, send_approval_email
+        from accounts.models import User
 
-    employee = instance.employee
-    name = employee.get_full_name() or employee.username
+        site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        approve_url, reject_url = build_approval_urls(instance, 'ot', site_url)
 
-    detail_lines = [
-        f"พนักงาน: {name}",
-        f"วันที่ OT: {instance.date}",
-        f"เวลา: {instance.start_time:%H:%M} – {instance.end_time:%H:%M} ({instance.hours} ชั่วโมง)",
-        f"เหตุผล: {instance.reason}",
-    ]
+        employee = instance.employee
+        name = employee.get_full_name() or employee.username
 
-    recipients = _get_recipients(employee)
-    for to_email in recipients:
-        send_approval_email(
-            to_email=to_email,
-            subject=f"[HRMS] คำขอทำ OT — {name}",
-            requester_name=name,
-            request_type="OT",
-            detail_lines=detail_lines,
-            approve_url=approve_url,
-            reject_url=reject_url,
-        )
+        detail_lines = [
+            f"พนักงาน: {name}",
+            f"วันที่ OT: {instance.date}",
+            f"เวลา: {instance.start_time:%H:%M} – {instance.end_time:%H:%M} ({instance.hours} ชั่วโมง)",
+            f"เหตุผล: {instance.reason}",
+        ]
 
+        recipients = _get_recipients(employee)
+        for to_email in recipients:
+            send_approval_email(
+                to_email=to_email,
+                subject=f"[HRMS] คำขอทำ OT — {name}",
+                requester_name=name,
+                request_type="OT",
+                detail_lines=detail_lines,
+                approve_url=approve_url,
+                reject_url=reject_url,
+            )
+
+
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("signal failed: %s", exc, exc_info=True)
 
 def _get_recipients(employee) -> list[str]:
     from accounts.models import User
